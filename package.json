@@ -1,0 +1,21 @@
+{
+  "name": "phone-csv-processor",
+  "version": "1.0.0",
+  "description": "Sistema de procesamiento, validación y generación de números telefónicos desde CSV",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "cli": "node cli.js",
+    "server": "node server.js",
+    "process": "node cli.js"
+  },
+  "keywords": ["csv", "phone", "e164", "validation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5"
+  }
+}
