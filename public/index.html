@@ -48,6 +48,9 @@
       max-width: 480px;
       margin-bottom: 1.5rem;
     }
+    .card-large {
+      max-width: 1200px;
+    }
     .zone {
       border: 2px dashed var(--border);
       border-radius: var(--radius);
@@ -102,13 +105,281 @@
       transition: background .2s;
     }
     .links a:hover { background: #3f3f46; }
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #3f3f46; }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+    }
+    .close-btn:hover { background: var(--border); color: var(--text); }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-group input[type="password"] {
+      font-family: monospace;
+    }
+    .progress {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 6px;
+      display: none;
+    }
+    .progress.active { display: block; }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .progress-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--accent) !important;
+      color: #fff !important;
+      border-color: var(--accent) !important;
+    }
+    .tab-btn:hover:not(.active) {
+      background: var(--border) !important;
+    }
+    textarea {
+      font-family: monospace;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+    }
+    table th,
+    table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+    table th {
+      background: var(--bg);
+      font-weight: 600;
+      color: var(--text);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    table tbody tr {
+      transition: background .2s;
+    }
+    table tbody tr:hover {
+      background: rgba(34,197,94,.08);
+    }
+    table td:first-child {
+      font-weight: 500;
+      font-size: 1rem;
+    }
+    .btn-small {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      background: var(--error);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .2s;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .btn-small:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(239,68,68,.3);
+    }
+    .btn-small:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .phone-number-cell {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      justify-content: space-between;
+    }
+    .phone-number-cell strong {
+      flex: 1;
+    }
+    /* Estilos para el modal de confirmación */
+    .confirm-modal-content {
+      max-width: 450px;
+    }
+    .confirm-modal-body {
+      margin-bottom: 1.5rem;
+    }
+    .confirm-modal-body p {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    .confirm-modal-body .phone-number {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .confirm-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem;
+      background: rgba(34,197,94,.08);
+      border-radius: 6px;
+      border: 1px solid rgba(34,197,94,.2);
+    }
+    .confirm-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .confirm-checkbox label {
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text);
+      user-select: none;
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+    .btn-confirm {
+      padding: 0.75rem 1.5rem;
+      background: var(--error);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-confirm:hover {
+      background: #dc2626;
+    }
+    .btn-cancel {
+      padding: 0.75rem 1.5rem;
+      background: var(--border);
+      color: var(--text);
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-cancel:hover {
+      background: #3f3f46;
+    }
   </style>
 </head>
 <body>
   <h1>Procesador de CSV — Teléfonos</h1>
   <p class="sub">Valida, normaliza y genera resumen y números por país</p>
 
-  <div class="card">
+  <!-- Tabs para navegar entre secciones -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; max-width: 720px; width: 100%; flex-wrap: wrap;">
+    <button class="tab-btn active" id="tabProcess" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
+      Procesar CSV
+    </button>
+    <button class="tab-btn" id="tabImport" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
+      Importar a Retell AI
+    </button>
+    <button class="tab-btn" id="tabManage" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
+      Gestionar Números
+    </button>
+  </div>
+
+  <!-- Sección de Procesar CSV -->
+  <div class="card" id="processSection">
     <div class="zone" id="zone">
       <input type="file" id="file" accept=".csv" />
       <p>Arrastra aquí un CSV o haz clic para elegir</p>
@@ -124,6 +395,225 @@
       <h3>Resumen por país</h3>
       <ul id="resumenList"></ul>
       <div class="links" id="links"></div>
+      <button class="btn btn-secondary" id="importBtn" style="margin-top: 1rem; display: none;">
+        Importar a Retell AI
+      </button>
+    </div>
+  </div>
+
+  <!-- Sección de Importar a Retell AI -->
+  <div class="card" id="importSection" style="display: none;">
+    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem;">Importar Números a Retell AI</h2>
+    
+    <form id="directImportForm">
+      <div class="form-group">
+        <label>Fuente de números *</label>
+        <select id="directNumberSource" required>
+          <option value="csv">Subir CSV con números</option>
+          <option value="manual">Ingresar números manualmente</option>
+          <option value="processed">Usar números procesados</option>
+        </select>
+      </div>
+      <div class="form-group" id="directCsvUploadGroup">
+        <label for="directCsvFile">Archivo CSV con números *</label>
+        <input type="file" id="directCsvFile" accept=".csv" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Formato: una columna con números en formato internacional (+57...)
+        </small>
+      </div>
+      <div class="form-group" id="directManualNumbersGroup" style="display: none;">
+        <label for="directManualNumbers">Números telefónicos (uno por línea o separados por comas) *</label>
+        <textarea id="directManualNumbers" rows="8" placeholder="5493415960906, 5492232105153, 5492616836030&#10;o uno por línea:&#10;+573146816250&#10;+34600089523" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: monospace; font-size: 0.9rem; resize: vertical;"></textarea>
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Puedes ingresar números separados por comas o uno por línea. El sistema agregará el "+" automáticamente si falta.
+        </small>
+      </div>
+      <div class="form-group" id="directProcessedGroup" style="display: none;">
+        <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">
+          Primero procesa un CSV en la pestaña "Procesar CSV" para usar esta opción.
+        </p>
+      </div>
+      <div class="form-group">
+        <label for="directApiKey">API Key de Retell AI *</label>
+        <input type="password" id="directApiKey" placeholder="Ingresa tu API Key" required />
+      </div>
+      <div class="form-group">
+        <label for="directTerminationUri">Termination URI *</label>
+        <input type="text" id="directTerminationUri" placeholder="ia.conecta-bit.com" value="ia.conecta-bit.com" required />
+      </div>
+      <div class="form-group">
+        <label for="directOutboundTransport">Outbound Transport *</label>
+        <select id="directOutboundTransport" required>
+          <option value="UDP" selected>UDP</option>
+          <option value="TCP">TCP</option>
+          <option value="TLS">TLS</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="directSipTrunkUsername">SIP Trunk Username (opcional)</label>
+        <input type="text" id="directSipTrunkUsername" placeholder="Enter SIP Trunk User Name" />
+      </div>
+      <div class="form-group">
+        <label for="directSipTrunkPassword">SIP Trunk Password (opcional)</label>
+        <input type="password" id="directSipTrunkPassword" placeholder="Enter SIP Trunk Password" />
+      </div>
+      <div class="form-group">
+        <label for="directOutboundAgentId">Outbound Agent ID *</label>
+        <input type="text" id="directOutboundAgentId" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" required />
+      </div>
+      <div class="form-group">
+        <label for="directNickname">Nickname (opcional)</label>
+        <input type="text" id="directNickname" placeholder="Ej: Brasil 1 (se numerará automáticamente: Brasil 2, Brasil 3...)" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Si ingresas un número (ej: "Brasil 5"), la numeración comenzará desde ese número. Si no ingresas número, comenzará desde 1.
+        </small>
+      </div>
+      <div class="progress" id="directProgress">
+        <div class="progress-bar">
+          <div class="progress-fill" id="directProgressFill"></div>
+        </div>
+        <div class="progress-text" id="directProgressText">0 / 0</div>
+      </div>
+      <button type="submit" class="btn" id="directImportSubmitBtn">Importar Números</button>
+      <div id="directImportMsg"></div>
+    </form>
+  </div>
+
+  <!-- Sección de Gestionar Números -->
+  <div class="card card-large" id="manageSection" style="display: none;">
+    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">Gestionar Números en Retell AI</h2>
+    
+    <div class="form-group" style="max-width: 800px;">
+      <label for="manageApiKey">API Key de Retell AI *</label>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <input 
+          type="password" 
+          id="manageApiKey" 
+          placeholder="Ingresa tu API Key" 
+          style="flex: 1;"
+        />
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+          <input type="checkbox" id="showApiKey" style="accent-color: var(--accent); cursor: pointer;" />
+          <label for="showApiKey" style="font-size: 0.9rem; color: var(--muted); cursor: pointer; white-space: nowrap;">Mostrar API Key</label>
+        </div>
+      </div>
+      <button class="btn" id="loadNumbersBtn" style="margin-top: 1rem;">Cargar Números</button>
+    </div>
+
+    <div id="numbersList" style="margin-top: 2rem; display: none;">
+      <h3 style="font-size: 1.1rem; margin-bottom: 1.5rem; font-weight: 600;">Números Importados</h3>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="searchNumbers" style="font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem; display: block;">Buscar número o nickname</label>
+        <input 
+          type="text" 
+          id="searchNumbers" 
+          placeholder="Buscar por número (con o sin +) o nickname" 
+          style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 1rem;"
+        />
+      </div>
+      <div id="numbersTable" style="overflow-x: auto; background: var(--bg); border-radius: var(--radius); padding: 1rem;"></div>
+      <div id="manageMsg" style="margin-top: 1rem;"></div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmación para Eliminar -->
+  <div class="modal" id="deleteConfirmModal">
+    <div class="modal-content confirm-modal-content">
+      <div class="modal-header">
+        <h2>Confirmar Eliminación</h2>
+        <button class="close-btn" id="closeDeleteModal">&times;</button>
+      </div>
+      <div class="confirm-modal-body">
+        <p>¿Estás seguro de que quieres eliminar el número <span class="phone-number" id="deletePhoneNumberText"></span>?</p>
+      </div>
+      <div class="confirm-checkbox">
+        <input type="checkbox" id="dontShowAgain" />
+        <label for="dontShowAgain">No mostrar más esta advertencia</label>
+      </div>
+      <div class="confirm-modal-actions">
+        <button class="btn-cancel" id="cancelDeleteBtn">Cancelar</button>
+        <button class="btn-confirm" id="confirmDeleteBtn">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Importación (mantener para compatibilidad) -->
+  <div class="modal" id="importModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Importar a Retell AI</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
+      <form id="importForm">
+        <div class="form-group">
+          <label>Fuente de números *</label>
+          <select id="numberSource" required>
+            <option value="processed">Usar números procesados</option>
+            <option value="csv">Subir CSV con números</option>
+            <option value="manual">Ingresar números manualmente</option>
+          </select>
+        </div>
+        <div class="form-group" id="csvUploadGroup" style="display: none;">
+          <label for="csvFile">Archivo CSV con números *</label>
+          <input type="file" id="csvFile" accept=".csv" />
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Formato: una columna con números en formato internacional (+57...)
+          </small>
+        </div>
+        <div class="form-group" id="manualNumbersGroup" style="display: none;">
+          <label for="manualNumbers">Números telefónicos (uno por línea o separados por comas) *</label>
+          <textarea id="manualNumbers" rows="5" placeholder="5493415960906, 5492232105153, 5492616836030&#10;o uno por línea:&#10;+573146816250&#10;+34600089523" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: monospace; font-size: 0.9rem; resize: vertical;"></textarea>
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Puedes ingresar números separados por comas o uno por línea. El sistema agregará el "+" automáticamente si falta.
+          </small>
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Un número por línea, formato internacional con +
+          </small>
+        </div>
+        <div class="form-group">
+          <label for="apiKey">API Key de Retell AI *</label>
+          <input type="password" id="apiKey" placeholder="Ingresa tu API Key" required />
+        </div>
+        <div class="form-group">
+          <label for="terminationUri">Termination URI *</label>
+          <input type="text" id="terminationUri" placeholder="ia.conecta-bit.com" value="ia.conecta-bit.com" required />
+        </div>
+        <div class="form-group">
+          <label for="outboundTransport">Outbound Transport *</label>
+          <select id="outboundTransport" required>
+            <option value="UDP" selected>UDP</option>
+            <option value="TCP">TCP</option>
+            <option value="TLS">TLS</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="sipTrunkUsername">SIP Trunk Username (opcional)</label>
+          <input type="text" id="sipTrunkUsername" placeholder="Enter SIP Trunk User Name" />
+        </div>
+        <div class="form-group">
+          <label for="sipTrunkPassword">SIP Trunk Password (opcional)</label>
+          <input type="password" id="sipTrunkPassword" placeholder="Enter SIP Trunk Password" />
+        </div>
+        <div class="form-group">
+          <label for="outboundAgentId">Outbound Agent ID *</label>
+          <input type="text" id="outboundAgentId" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" required />
+        </div>
+        <div class="form-group">
+          <label for="nickname">Nickname (opcional)</label>
+          <input type="text" id="nickname" placeholder="Ej: Brasil 1 (se numerará automáticamente: Brasil 2, Brasil 3...)" />
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Si ingresas un número (ej: "Brasil 5"), la numeración comenzará desde ese número. Si no ingresas número, comenzará desde 1.
+          </small>
+        </div>
+        <div class="progress" id="progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">0 / 0</div>
+        </div>
+        <button type="submit" class="btn" id="importSubmitBtn">Importar Números</button>
+        <div id="importMsg"></div>
+      </form>
     </div>
   </div>
 
@@ -138,8 +628,18 @@
     const resumen = document.getElementById('resumen');
     const resumenList = document.getElementById('resumenList');
     const links = document.getElementById('links');
+    const importBtn = document.getElementById('importBtn');
+    const importModal = document.getElementById('importModal');
+    const closeModal = document.getElementById('closeModal');
+    const importForm = document.getElementById('importForm');
+    const importMsg = document.getElementById('importMsg');
+    const progress = document.getElementById('progress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const importSubmitBtn = document.getElementById('importSubmitBtn');
 
     let selected = null;
+    let currentOutputId = null;
 
     zone.addEventListener('click', () => fileInput.click());
     zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -196,6 +696,17 @@
           links.appendChild(a);
         }
         resumen.style.display = 'block';
+        
+        // Guardar outputId para importación
+        currentOutputId = data.outputId;
+        if (currentOutputId) {
+          importBtn.style.display = 'block';
+          // Actualizar opción de números procesados en la sección directa
+          const processedOption = directNumberSource.querySelector('option[value="processed"]');
+          if (processedOption) {
+            processedOption.textContent = 'Usar números procesados (disponible)';
+          }
+        }
       } catch (e) {
         msg.textContent = e.message || 'Error al procesar';
         msg.className = 'msg error';
@@ -203,6 +714,950 @@
         btn.disabled = false;
       }
     });
+
+    // Modal de importación
+    importBtn.addEventListener('click', () => {
+      importModal.classList.add('active');
+    });
+
+    closeModal.addEventListener('click', () => {
+      importModal.classList.remove('active');
+      importForm.reset();
+      importMsg.textContent = '';
+      progress.classList.remove('active');
+      csvUploadGroup.style.display = 'none';
+      manualNumbersGroup.style.display = 'none';
+    });
+
+    importModal.addEventListener('click', (e) => {
+      if (e.target === importModal) {
+        importModal.classList.remove('active');
+        importForm.reset();
+        importMsg.textContent = '';
+        progress.classList.remove('active');
+        csvUploadGroup.style.display = 'none';
+        manualNumbersGroup.style.display = 'none';
+      }
+    });
+
+    importForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const source = numberSource.value;
+      let phoneNumbers = [];
+
+      // Obtener números según la fuente seleccionada
+      if (source === 'processed') {
+        if (!currentOutputId) {
+          importMsg.textContent = 'Error: No hay números procesados. Procesa un CSV primero o selecciona otra fuente.';
+          importMsg.className = 'msg error';
+          return;
+        }
+        // Los números se leerán del CSV en el servidor usando outputId
+      } else if (source === 'csv') {
+        const file = csvFile.files[0];
+        if (!file) {
+          importMsg.textContent = 'Error: Debes seleccionar un archivo CSV';
+          importMsg.className = 'msg error';
+          return;
+        }
+        // Leer el CSV y extraer números
+        try {
+          const text = await file.text();
+          phoneNumbers = extractNumbersFromCSV(text);
+          if (phoneNumbers.length === 0) {
+            importMsg.textContent = 'Error: No se encontraron números válidos en el CSV';
+            importMsg.className = 'msg error';
+            return;
+          }
+        } catch (error) {
+          importMsg.textContent = 'Error al leer el archivo CSV: ' + error.message;
+          importMsg.className = 'msg error';
+          return;
+        }
+      } else if (source === 'manual') {
+        const numbersText = manualNumbers.value.trim();
+        if (!numbersText) {
+          importMsg.textContent = 'Error: Debes ingresar al menos un número';
+          importMsg.className = 'msg error';
+          return;
+        }
+        
+        // Procesar números: pueden estar separados por líneas (\n) o por comas (,)
+        phoneNumbers = numbersText
+          .split(/[\n,]+/) // Dividir por líneas o comas
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(num => {
+            // Remover espacios y caracteres no numéricos excepto el +
+            let cleaned = num.replace(/\s/g, '');
+            // Si no empieza con +, agregarlo
+            if (!cleaned.startsWith('+')) {
+              cleaned = '+' + cleaned;
+            }
+            return cleaned;
+          })
+          .filter(num => /^\+\d{8,15}$/.test(num));
+        
+        if (phoneNumbers.length === 0) {
+          importMsg.textContent = 'Error: No se encontraron números válidos. Puedes ingresarlos separados por líneas o comas (ej: 5493415960906, 5492232105153)';
+          importMsg.className = 'msg error';
+          return;
+        }
+      }
+
+      const formData = {
+        source: source,
+        outputId: source === 'processed' ? currentOutputId : null,
+        phoneNumbers: source !== 'processed' ? phoneNumbers : null,
+        apiKey: document.getElementById('apiKey').value,
+        terminationUri: document.getElementById('terminationUri').value,
+        outboundTransport: document.getElementById('outboundTransport').value,
+        outboundAgentId: document.getElementById('outboundAgentId').value,
+        sipTrunkUsername: document.getElementById('sipTrunkUsername').value,
+        sipTrunkPassword: document.getElementById('sipTrunkPassword').value,
+        nickname: document.getElementById('nickname').value,
+      };
+
+      importSubmitBtn.disabled = true;
+      importMsg.textContent = '';
+      progress.classList.add('active');
+      progressFill.style.width = '0%';
+      progressText.textContent = 'Iniciando importación...';
+
+      let totalNumbers = 0;
+      let importedCount = 0;
+      let failedCount = 0;
+      const failedNumbers = [];
+
+      // Función para extraer números de CSV
+      function extractNumbersFromCSV(csvText) {
+        const lines = csvText.split('\n').filter(line => line.trim());
+        const numbers = [];
+        
+        for (const line of lines) {
+          // Buscar números que empiecen con + o números de 8-15 dígitos
+          const matches = line.match(/(\+?\d{8,15})/g);
+          if (matches) {
+            numbers.push(...matches.map(num => num.startsWith('+') ? num : `+${num}`));
+          }
+        }
+        
+        // Eliminar duplicados
+        return [...new Set(numbers)];
+      }
+
+      // Función para manejar eventos de progreso
+      function handleProgressEvent(data) {
+        if (data.type === 'start' || data.event === 'start') {
+          totalNumbers = data.total;
+          progressText.textContent = `0 / ${totalNumbers}`;
+        } else if (data.type === 'progress' || data.event === 'progress') {
+          importedCount = data.imported;
+          failedCount = data.failed;
+          const current = data.current;
+          const total = data.total;
+          
+          // Actualizar barra de progreso
+          const percentage = (current / total) * 100;
+          progressFill.style.width = `${percentage}%`;
+          progressText.textContent = `${current} / ${total} (${importedCount} exitosos, ${failedCount} fallidos)`;
+          
+          // Guardar números fallidos
+          if (!data.success && data.error) {
+            failedNumbers.push({ phoneNumber: data.phoneNumber, error: data.error });
+          }
+        } else if (data.type === 'complete' || data.event === 'complete') {
+          progressFill.style.width = '100%';
+          progressText.textContent = `${data.total} / ${data.total}`;
+          
+          importMsg.textContent = `Importación completada: ${data.imported} exitosos, ${data.failed} fallidos`;
+          importMsg.className = 'msg ok';
+
+          if (data.failed > 0 && failedNumbers.length > 0) {
+            const errorDetails = failedNumbers.slice(0, 10).map(r => 
+              `${r.phoneNumber}: ${r.error}`
+            ).join('\n');
+            importMsg.textContent += `\n\nErrores (primeros 10):\n${errorDetails}`;
+          }
+
+          importSubmitBtn.disabled = false;
+
+          if (data.failed === 0) {
+            setTimeout(() => {
+              importModal.classList.remove('active');
+              importForm.reset();
+              progress.classList.remove('active');
+              csvUploadGroup.style.display = 'none';
+              manualNumbersGroup.style.display = 'none';
+            }, 5000);
+          }
+        }
+      }
+
+      try {
+        // Construir parámetros para la petición
+        const params = new URLSearchParams({
+          source: formData.source,
+          apiKey: formData.apiKey,
+          terminationUri: formData.terminationUri,
+          outboundTransport: formData.outboundTransport,
+          outboundAgentId: formData.outboundAgentId,
+          sipTrunkUsername: formData.sipTrunkUsername || '',
+          sipTrunkPassword: formData.sipTrunkPassword || '',
+          nickname: formData.nickname || '',
+        });
+
+        if (formData.source === 'processed') {
+          params.append('outputId', formData.outputId);
+        } else {
+          // Enviar números en el body usando POST en lugar de GET
+          // Usaremos fetch con POST y EventSource no funciona con POST, así que usaremos fetch con streaming
+          importMsg.textContent = 'Iniciando importación...';
+          importMsg.className = 'msg';
+          progress.classList.add('active');
+          
+          const response = await fetch(API + '/api/retell/import-direct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phoneNumbers: formData.phoneNumbers,
+              ...formData,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al importar');
+          }
+
+          // Leer el stream de respuesta (formato SSE)
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
+
+            for (const event of events) {
+              if (!event.trim()) continue;
+              
+              let eventType = 'message';
+              let eventData = null;
+              
+              for (const line of event.split('\n')) {
+                if (line.startsWith('event: ')) {
+                  eventType = line.slice(7).trim();
+                } else if (line.startsWith('data: ')) {
+                  try {
+                    eventData = JSON.parse(line.slice(6));
+                    eventData.event = eventType;
+                    handleProgressEvent(eventData);
+                  } catch (e) {
+                    console.error('Error parsing event data:', e);
+                  }
+                }
+              }
+            }
+          }
+
+          importSubmitBtn.disabled = false;
+          return;
+        }
+
+        // Usar Server-Sent Events para progreso en tiempo real (solo para números procesados)
+        const eventSource = new EventSource(API + '/api/retell/import-stream?' + params);
+
+        eventSource.addEventListener('start', (e) => {
+          const data = JSON.parse(e.data);
+          handleProgressEvent({ type: 'start', ...data });
+        });
+
+        eventSource.addEventListener('progress', (e) => {
+          const data = JSON.parse(e.data);
+          handleProgressEvent({ type: 'progress', ...data });
+        });
+
+        eventSource.addEventListener('complete', (e) => {
+          const data = JSON.parse(e.data);
+          eventSource.close();
+          handleProgressEvent({ type: 'complete', ...data });
+        });
+
+        eventSource.addEventListener('error', (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            eventSource.close();
+            importMsg.textContent = data.error || 'Error al importar números';
+            importMsg.className = 'msg error';
+            progress.classList.remove('active');
+            importSubmitBtn.disabled = false;
+          } catch (err) {
+            // Error de conexión
+            eventSource.close();
+            importMsg.textContent = 'Error de conexión con el servidor';
+            importMsg.className = 'msg error';
+            progress.classList.remove('active');
+            importSubmitBtn.disabled = false;
+          }
+        });
+
+        // Manejar errores de conexión (solo para EventSource)
+        if (formData.source === 'processed') {
+          eventSource.onerror = (error) => {
+            eventSource.close();
+            importMsg.textContent = 'Error de conexión con el servidor';
+            importMsg.className = 'msg error';
+            progress.classList.remove('active');
+            importSubmitBtn.disabled = false;
+          };
+        }
+      } catch (error) {
+        importMsg.textContent = error.message || 'Error al importar números';
+        importMsg.className = 'msg error';
+        progress.classList.remove('active');
+        importSubmitBtn.disabled = false;
+      }
+    });
+
+    // ===== SECCIÓN DE IMPORTACIÓN DIRECTA =====
+    const processSection = document.getElementById('processSection');
+    const importSection = document.getElementById('importSection');
+    const tabProcess = document.getElementById('tabProcess');
+    const tabImport = document.getElementById('tabImport');
+    const directImportForm = document.getElementById('directImportForm');
+    const directNumberSource = document.getElementById('directNumberSource');
+    const directCsvUploadGroup = document.getElementById('directCsvUploadGroup');
+    const directManualNumbersGroup = document.getElementById('directManualNumbersGroup');
+    const directProcessedGroup = document.getElementById('directProcessedGroup');
+    const directCsvFile = document.getElementById('directCsvFile');
+    const directManualNumbers = document.getElementById('directManualNumbers');
+    const directProgress = document.getElementById('directProgress');
+    const directProgressFill = document.getElementById('directProgressFill');
+    const directProgressText = document.getElementById('directProgressText');
+    const directImportSubmitBtn = document.getElementById('directImportSubmitBtn');
+    const directImportMsg = document.getElementById('directImportMsg');
+
+    // Navegación entre tabs
+    tabProcess.addEventListener('click', () => {
+      processSection.style.display = 'block';
+      importSection.style.display = 'none';
+      manageSection.style.display = 'none';
+      tabProcess.classList.add('active');
+      tabImport.classList.remove('active');
+      tabManage.classList.remove('active');
+    });
+
+    tabImport.addEventListener('click', () => {
+      processSection.style.display = 'none';
+      importSection.style.display = 'block';
+      manageSection.style.display = 'none';
+      tabProcess.classList.remove('active');
+      tabImport.classList.add('active');
+      tabManage.classList.remove('active');
+    });
+
+    tabManage.addEventListener('click', () => {
+      processSection.style.display = 'none';
+      importSection.style.display = 'none';
+      manageSection.style.display = 'block';
+      tabProcess.classList.remove('active');
+      tabImport.classList.remove('active');
+      tabManage.classList.add('active');
+    });
+
+    // Manejar cambio de fuente de números en importación directa
+    directNumberSource.addEventListener('change', (e) => {
+      const source = e.target.value;
+      directCsvUploadGroup.style.display = source === 'csv' ? 'block' : 'none';
+      directManualNumbersGroup.style.display = source === 'manual' ? 'block' : 'none';
+      directProcessedGroup.style.display = source === 'processed' ? 'block' : 'none';
+      
+      directCsvFile.required = source === 'csv';
+      directManualNumbers.required = source === 'manual';
+    });
+
+    // Función para extraer números de CSV (compartida)
+    function extractNumbersFromCSV(csvText) {
+      const lines = csvText.split('\n').filter(line => line.trim());
+      const numbers = [];
+      
+      for (const line of lines) {
+        const matches = line.match(/(\+?\d{8,15})/g);
+        if (matches) {
+          numbers.push(...matches.map(num => num.startsWith('+') ? num : `+${num}`));
+        }
+      }
+      
+      return [...new Set(numbers)];
+    }
+
+    // Formulario de importación directa
+    directImportForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const source = directNumberSource.value;
+      let phoneNumbers = [];
+
+      if (source === 'processed') {
+        if (!currentOutputId) {
+          directImportMsg.textContent = 'Error: No hay números procesados. Procesa un CSV primero en la pestaña "Procesar CSV".';
+          directImportMsg.className = 'msg error';
+          return;
+        }
+      } else if (source === 'csv') {
+        const file = directCsvFile.files[0];
+        if (!file) {
+          directImportMsg.textContent = 'Error: Debes seleccionar un archivo CSV';
+          directImportMsg.className = 'msg error';
+          return;
+        }
+        try {
+          const text = await file.text();
+          phoneNumbers = extractNumbersFromCSV(text);
+          if (phoneNumbers.length === 0) {
+            directImportMsg.textContent = 'Error: No se encontraron números válidos en el CSV';
+            directImportMsg.className = 'msg error';
+            return;
+          }
+        } catch (error) {
+          directImportMsg.textContent = 'Error al leer el archivo CSV: ' + error.message;
+          directImportMsg.className = 'msg error';
+          return;
+        }
+      } else if (source === 'manual') {
+        const numbersText = directManualNumbers.value.trim();
+        if (!numbersText) {
+          directImportMsg.textContent = 'Error: Debes ingresar al menos un número';
+          directImportMsg.className = 'msg error';
+          return;
+        }
+        
+        // Procesar números: pueden estar separados por líneas (\n) o por comas (,)
+        phoneNumbers = numbersText
+          .split(/[\n,]+/) // Dividir por líneas o comas
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(num => {
+            // Remover espacios y caracteres no numéricos excepto el +
+            let cleaned = num.replace(/\s/g, '');
+            // Si no empieza con +, agregarlo
+            if (!cleaned.startsWith('+')) {
+              cleaned = '+' + cleaned;
+            }
+            return cleaned;
+          })
+          .filter(num => /^\+\d{8,15}$/.test(num));
+        
+        if (phoneNumbers.length === 0) {
+          directImportMsg.textContent = 'Error: No se encontraron números válidos. Puedes ingresarlos separados por líneas o comas (ej: 5493415960906, 5492232105153)';
+          directImportMsg.className = 'msg error';
+          return;
+        }
+      }
+
+      const formData = {
+        source: source,
+        outputId: source === 'processed' ? currentOutputId : null,
+        phoneNumbers: source !== 'processed' ? phoneNumbers : null,
+        apiKey: document.getElementById('directApiKey').value,
+        terminationUri: document.getElementById('directTerminationUri').value,
+        outboundTransport: document.getElementById('directOutboundTransport').value,
+        outboundAgentId: document.getElementById('directOutboundAgentId').value,
+        sipTrunkUsername: document.getElementById('directSipTrunkUsername').value,
+        sipTrunkPassword: document.getElementById('directSipTrunkPassword').value,
+        nickname: document.getElementById('directNickname').value,
+      };
+
+      directImportSubmitBtn.disabled = true;
+      directImportMsg.textContent = '';
+      directProgress.classList.add('active');
+      directProgressFill.style.width = '0%';
+      directProgressText.textContent = 'Iniciando importación...';
+
+      let totalNumbers = 0;
+      let importedCount = 0;
+      let failedCount = 0;
+      const failedNumbers = [];
+
+      function handleDirectProgressEvent(data) {
+        if (data.type === 'start' || data.event === 'start') {
+          totalNumbers = data.total;
+          directProgressText.textContent = `0 / ${totalNumbers}`;
+        } else if (data.type === 'progress' || data.event === 'progress') {
+          importedCount = data.imported;
+          failedCount = data.failed;
+          const current = data.current;
+          const total = data.total;
+          
+          const percentage = (current / total) * 100;
+          directProgressFill.style.width = `${percentage}%`;
+          directProgressText.textContent = `${current} / ${total} (${importedCount} exitosos, ${failedCount} fallidos)`;
+          
+          if (!data.success && data.error) {
+            failedNumbers.push({ phoneNumber: data.phoneNumber, error: data.error });
+          }
+        } else if (data.type === 'complete' || data.event === 'complete') {
+          directProgressFill.style.width = '100%';
+          directProgressText.textContent = `${data.total} / ${data.total}`;
+          
+          directImportMsg.textContent = `Importación completada: ${data.imported} exitosos, ${data.failed} fallidos`;
+          directImportMsg.className = 'msg ok';
+
+          if (data.failed > 0 && failedNumbers.length > 0) {
+            const errorDetails = failedNumbers.slice(0, 10).map(r => 
+              `${r.phoneNumber}: ${r.error}`
+            ).join('\n');
+            directImportMsg.textContent += `\n\nErrores (primeros 10):\n${errorDetails}`;
+          }
+
+          directImportSubmitBtn.disabled = false;
+        }
+      }
+
+      try {
+        if (formData.source === 'processed') {
+          const params = new URLSearchParams({
+            outputId: formData.outputId,
+            apiKey: formData.apiKey,
+            terminationUri: formData.terminationUri,
+            outboundTransport: formData.outboundTransport,
+            outboundAgentId: formData.outboundAgentId,
+            sipTrunkUsername: formData.sipTrunkUsername || '',
+            sipTrunkPassword: formData.sipTrunkPassword || '',
+            nickname: formData.nickname || '',
+          });
+
+          const eventSource = new EventSource(API + '/api/retell/import-stream?' + params);
+
+          eventSource.addEventListener('start', (e) => {
+            const data = JSON.parse(e.data);
+            handleDirectProgressEvent({ type: 'start', ...data });
+          });
+
+          eventSource.addEventListener('progress', (e) => {
+            const data = JSON.parse(e.data);
+            handleDirectProgressEvent({ type: 'progress', ...data });
+          });
+
+          eventSource.addEventListener('complete', (e) => {
+            const data = JSON.parse(e.data);
+            eventSource.close();
+            handleDirectProgressEvent({ type: 'complete', ...data });
+          });
+
+          eventSource.onerror = () => {
+            eventSource.close();
+            directImportMsg.textContent = 'Error de conexión con el servidor';
+            directImportMsg.className = 'msg error';
+            directProgress.classList.remove('active');
+            directImportSubmitBtn.disabled = false;
+          };
+        } else {
+          const response = await fetch(API + '/api/retell/import-direct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phoneNumbers: formData.phoneNumbers,
+              apiKey: formData.apiKey,
+              terminationUri: formData.terminationUri,
+              outboundTransport: formData.outboundTransport,
+              outboundAgentId: formData.outboundAgentId,
+              sipTrunkUsername: formData.sipTrunkUsername,
+              sipTrunkPassword: formData.sipTrunkPassword,
+              nickname: formData.nickname,
+            }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al importar');
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const events = buffer.split('\n\n');
+            buffer = events.pop() || '';
+
+            for (const event of events) {
+              if (!event.trim()) continue;
+              
+              let eventType = 'message';
+              let eventData = null;
+              
+              for (const line of event.split('\n')) {
+                if (line.startsWith('event: ')) {
+                  eventType = line.slice(7).trim();
+                } else if (line.startsWith('data: ')) {
+                  try {
+                    eventData = JSON.parse(line.slice(6));
+                    eventData.event = eventType;
+                    handleDirectProgressEvent(eventData);
+                  } catch (e) {
+                    console.error('Error parsing event data:', e);
+                  }
+                }
+              }
+            }
+          }
+
+          directImportSubmitBtn.disabled = false;
+        }
+      } catch (error) {
+        directImportMsg.textContent = error.message || 'Error al importar números';
+        directImportMsg.className = 'msg error';
+        directProgress.classList.remove('active');
+        directImportSubmitBtn.disabled = false;
+      }
+    });
+
+    // ===== SECCIÓN DE GESTIÓN DE NÚMEROS =====
+    const manageApiKey = document.getElementById('manageApiKey');
+    const showApiKey = document.getElementById('showApiKey');
+    const loadNumbersBtn = document.getElementById('loadNumbersBtn');
+    const numbersList = document.getElementById('numbersList');
+    const numbersTable = document.getElementById('numbersTable');
+    const manageMsg = document.getElementById('manageMsg');
+    const searchNumbersInput = document.getElementById('searchNumbers');
+    
+    // Variable para almacenar todos los números (sin filtrar)
+    let allPhoneNumbers = [];
+    let currentApiKey = '';
+
+    // Toggle para mostrar/ocultar API Key
+    if (showApiKey) {
+      showApiKey.addEventListener('change', (e) => {
+        manageApiKey.type = e.target.checked ? 'text' : 'password';
+      });
+    }
+
+    // Permitir buscar con Enter en el campo de API Key
+    if (manageApiKey) {
+      manageApiKey.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          // Solo ejecutar si el botón no está deshabilitado
+          if (!loadNumbersBtn.disabled) {
+            loadNumbersBtn.click();
+          }
+        }
+      });
+    }
+
+    loadNumbersBtn.addEventListener('click', async () => {
+      const apiKey = manageApiKey.value.trim();
+      if (!apiKey) {
+        manageMsg.textContent = 'Error: Debes ingresar tu API Key';
+        manageMsg.className = 'msg error';
+        return;
+      }
+
+      loadNumbersBtn.disabled = true;
+      loadNumbersBtn.textContent = 'Cargando...';
+      manageMsg.textContent = '';
+      numbersList.style.display = 'none';
+
+      try {
+        const response = await fetch(API + '/api/retell/list?apiKey=' + encodeURIComponent(apiKey));
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || 'Error al cargar números');
+        }
+
+        const phoneNumbers = result.phoneNumbers || [];
+        
+        // Guardar los números originales y la API key para el filtrado
+        allPhoneNumbers = phoneNumbers;
+        currentApiKey = apiKey;
+        
+        // Limpiar el campo de búsqueda
+        searchNumbersInput.value = '';
+        
+        // Debug: ver qué campos tiene el primer número
+        if (phoneNumbers.length > 0) {
+          console.log('Ejemplo de número recibido:', phoneNumbers[0]);
+          console.log('Campos disponibles:', Object.keys(phoneNumbers[0]));
+        }
+        
+        // Renderizar la tabla con todos los números
+        renderPhoneNumbersTable(phoneNumbers);
+        
+        if (phoneNumbers.length === 0) {
+          manageMsg.textContent = 'No hay números importados en Retell AI';
+          manageMsg.className = 'msg';
+          numbersList.style.display = 'block';
+        } else {
+          numbersList.style.display = 'block';
+          manageMsg.textContent = `Se encontraron ${phoneNumbers.length} número(s)`;
+          manageMsg.className = 'msg ok';
+        }
+      } catch (error) {
+        manageMsg.textContent = error.message || 'Error al cargar números';
+        manageMsg.className = 'msg error';
+      } finally {
+        loadNumbersBtn.disabled = false;
+        loadNumbersBtn.textContent = 'Cargar Números';
+      }
+    });
+
+    // Función para renderizar la tabla de números
+    function renderPhoneNumbersTable(phoneNumbers) {
+      if (phoneNumbers.length === 0) {
+        numbersTable.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 2rem;">No hay números para mostrar</p>';
+        return;
+      }
+
+      let tableHTML = '<table><thead><tr><th style="width: 30%;">Número</th><th style="width: 25%;">Nickname</th><th style="width: 35%;">Agent ID</th><th style="width: 10%; text-align: center;">Acción</th></tr></thead><tbody>';
+      
+      phoneNumbers.forEach((phone, index) => {
+        const nickname = phone.nickname || '-';
+        const agentId = phone.outbound_agent_id || '-';
+        // El ID puede venir como phone_number_id, _id o id. Si no existe, usamos el phone_number directamente
+        const phoneNumberId = phone.phone_number_id || phone._id || phone.id || phone.phone_number;
+        
+        // Debug para el primer número
+        if (index === 0) {
+          console.log('=== DEBUG: Estructura del primer número ===');
+          console.log('Objeto completo:', phone);
+          console.log('phone_number_id:', phone.phone_number_id);
+          console.log('_id:', phone._id);
+          console.log('id:', phone.id);
+          console.log('phone_number:', phone.phone_number);
+          console.log('Todos los campos:', Object.keys(phone));
+          console.log('ID que se usará:', phoneNumberId);
+        }
+        
+        // Escapar comillas simples y dobles para evitar problemas en el HTML
+        const safePhoneNumberId = phoneNumberId ? String(phoneNumberId).replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+        const safeApiKey = String(currentApiKey).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safePhoneNumber = String(phone.phone_number || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
+        tableHTML += `
+          <tr>
+            <td><strong>${phone.phone_number}</strong></td>
+            <td>${nickname}</td>
+            <td style="font-size: 0.85rem; color: var(--muted); word-break: break-all;">${agentId}</td>
+            <td style="text-align: center;">
+              <button class="btn-small delete-btn" data-phone="${safePhoneNumber}" onclick="deletePhoneNumber('${safePhoneNumberId}', '${safeApiKey}', '${safePhoneNumber}', this)" title="Eliminar ${safePhoneNumber}">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      tableHTML += '</tbody></table>';
+      numbersTable.innerHTML = tableHTML;
+    }
+
+    // Función para filtrar números telefónicos
+    function filterPhoneNumbers(searchTerm) {
+      if (!searchTerm || searchTerm.trim() === '') {
+        // Si no hay término de búsqueda, mostrar todos
+        renderPhoneNumbersTable(allPhoneNumbers);
+        manageMsg.textContent = `Se encontraron ${allPhoneNumbers.length} número(s)`;
+        manageMsg.className = 'msg ok';
+        return;
+      }
+
+      const searchLower = searchTerm.trim().toLowerCase();
+      
+      // Filtrar números que coincidan en número telefónico o nickname
+      const filtered = allPhoneNumbers.filter(phone => {
+        // Buscar en el número telefónico (normalizado, sin + y espacios)
+        const normalizedPhone = (phone.phone_number || '').replace(/\+/g, '').replace(/\s/g, '').toLowerCase();
+        const phoneMatches = normalizedPhone.includes(searchLower.replace(/\+/g, '').replace(/\s/g, ''));
+        
+        // Buscar en el nickname (case-insensitive)
+        const nickname = (phone.nickname || '').toLowerCase();
+        const nicknameMatches = nickname.includes(searchLower);
+        
+        // Retornar true si coincide en número o nickname
+        return phoneMatches || nicknameMatches;
+      });
+
+      // Renderizar la tabla con los números filtrados
+      renderPhoneNumbersTable(filtered);
+      
+      if (filtered.length === 0) {
+        manageMsg.textContent = `No se encontraron números que coincidan con "${searchTerm}"`;
+        manageMsg.className = 'msg';
+      } else {
+        manageMsg.textContent = `Se encontraron ${filtered.length} número(s) de ${allPhoneNumbers.length} total`;
+        manageMsg.className = 'msg ok';
+      }
+    }
+
+    // Event listener para el campo de búsqueda
+    if (searchNumbersInput) {
+      searchNumbersInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value;
+        filterPhoneNumbers(searchTerm);
+      });
+    }
+
+    // Función para mostrar modal de confirmación personalizado
+    function showDeleteConfirmModal(phoneNumber) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('deleteConfirmModal');
+        const phoneNumberText = document.getElementById('deletePhoneNumberText');
+        const dontShowAgainCheckbox = document.getElementById('dontShowAgain');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const cancelBtn = document.getElementById('cancelDeleteBtn');
+        const closeBtn = document.getElementById('closeDeleteModal');
+
+        // Verificar si el usuario ya marcó "No mostrar más"
+        const skipConfirmation = localStorage.getItem('skipDeleteConfirmation') === 'true';
+        if (skipConfirmation) {
+          resolve(true);
+          return;
+        }
+
+        // Configurar el texto del número
+        phoneNumberText.textContent = phoneNumber;
+
+        // Mostrar el modal
+        modal.classList.add('active');
+
+        // Función para cerrar el modal
+        const closeModal = () => {
+          modal.classList.remove('active');
+        };
+
+        // Función para confirmar
+        const handleConfirm = () => {
+          const dontShowAgain = dontShowAgainCheckbox.checked;
+          if (dontShowAgain) {
+            localStorage.setItem('skipDeleteConfirmation', 'true');
+          }
+          closeModal();
+          resolve(true);
+        };
+
+        // Función para cancelar
+        const handleCancel = () => {
+          closeModal();
+          resolve(false);
+        };
+
+        // Limpiar listeners anteriores y agregar nuevos
+        confirmBtn.onclick = handleConfirm;
+        cancelBtn.onclick = handleCancel;
+        closeBtn.onclick = handleCancel;
+        
+        // Cerrar al hacer clic fuera del modal
+        modal.onclick = (e) => {
+          if (e.target === modal) {
+            handleCancel();
+          }
+        };
+
+        // Cerrar con Escape
+        const handleEscape = (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('active')) {
+            handleCancel();
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    // Función global para eliminar números
+    window.deletePhoneNumber = async function(phoneNumberId, apiKey, phoneNumber, buttonElement) {
+      console.log('deletePhoneNumber llamado con:', { phoneNumberId, phoneNumber, apiKey: apiKey ? 'presente' : 'faltante' });
+      
+      // Si phoneNumberId está vacío o es inválido, usar phoneNumber directamente
+      let identifier = phoneNumberId;
+      if (!identifier || identifier === 'undefined' || identifier === 'null' || (typeof identifier === 'string' && identifier.trim() === '')) {
+        console.warn('PhoneNumberId inválido, usando phoneNumber directamente:', phoneNumber);
+        identifier = phoneNumber;
+      }
+      
+      // Validar que tengamos al menos un identificador
+      if (!identifier || identifier.trim() === '') {
+        manageMsg.textContent = 'Error: No se puede identificar el número a eliminar.';
+        manageMsg.className = 'msg error';
+        console.error('No hay identificador válido:', { phoneNumberId, phoneNumber });
+        return;
+      }
+
+      // Obtener el botón si no se pasó como parámetro
+      let btn = buttonElement;
+      if (!btn) {
+        // Intentar encontrar el botón por el atributo data-phone
+        btn = document.querySelector(`button.delete-btn[data-phone="${phoneNumber}"]`);
+      }
+      
+      // Si aún no tenemos el botón, intentar usar event.target como fallback
+      if (!btn && typeof event !== 'undefined' && event.target) {
+        btn = event.target;
+      }
+
+      // Mostrar modal de confirmación personalizado
+      const confirmed = await showDeleteConfirmModal(phoneNumber);
+      if (!confirmed) {
+        // Si se canceló, asegurarse de que el botón esté en estado normal
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Eliminar';
+        }
+        return;
+      }
+
+      // Actualizar el estado del botón solo si existe
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Eliminando...';
+      }
+
+      try {
+        // Usar encodeURIComponent para asegurar que el identificador se pase correctamente
+        const response = await fetch(API + '/api/retell/delete/' + encodeURIComponent(identifier), {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey, phoneNumber }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          manageMsg.textContent = `Número ${phoneNumber} eliminado exitosamente`;
+          manageMsg.className = 'msg ok';
+          // Recargar la lista (esto recreará todos los botones)
+          setTimeout(() => {
+            loadNumbersBtn.click();
+          }, 1000);
+        } else {
+          manageMsg.textContent = result.error || 'Error al eliminar número';
+          manageMsg.className = 'msg error';
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Eliminar';
+          }
+        }
+      } catch (error) {
+        manageMsg.textContent = error.message || 'Error al eliminar número';
+        manageMsg.className = 'msg error';
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Eliminar';
+        }
+      }
+    };
   </script>
 </body>
 </html>

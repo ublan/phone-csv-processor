@@ -65,7 +65,7 @@ node cli.js ejemplo.csv --output-dir=output --clean
 npm run server
 ```
 
-- **Frontend:** [http://localhost:3333](http://localhost:3333) — subir CSV y descargar resultados
+- **Frontend:** [http://localhost:3334](http://localhost:3334) — subir CSV y descargar resultados
 - **API:** `POST /api/process` con `multipart/form-data`, campo `file` (CSV). Query `?clean=1` para incluir `datos_limpios.csv`
 - **Descargas:** `GET /api/download/:id/resumen_por_pais.csv`, `numeros_generados.csv`, `datos_limpios.csv`
 
@@ -95,3 +95,91 @@ phone-csv-processor/
 ## Países soportados
 
 Argentina, México, España, Colombia, Chile, Perú, USA, Canadá. Para el resto se aplican longitudes 8–15 dígitos y validación de prefijo si está en la configuración.
+
+---
+
+## Integración con Retell AI
+
+El sistema permite importar números telefónicos generados directamente a Retell AI.
+
+### Configuración
+
+1. **Obtener API Key de Retell AI**:
+   - Crear cuenta en https://retellai.com
+   - Generar un agente de prueba
+   - Obtener la API Key desde el dashboard
+
+2. **Configurar variables de entorno** (opcional):
+   ```bash
+   cp .env.example .env
+   # Editar .env y agregar tu RETELL_AI_API_KEY
+   ```
+
+### Uso de la Integración
+
+1. **Procesar CSV**: Sube y procesa tu archivo CSV como se describe arriba.
+
+2. **Importar a Retell AI**:
+   - Después de procesar, aparecerá el botón "Importar a Retell AI"
+   - Completa el formulario con:
+     - **API Key**: Tu API Key de Retell AI
+     - **Termination URI**: URI del proveedor SIP (ej: `ia.conecta-bit.com`)
+     - **Outbound Transport**: Protocolo (UDP, TCP, TLS)
+     - **Outbound Agent ID**: ID del agente (ej: `agent_5c8cb6c7ba9eeff5857d7bdf1b`)
+     - **SIP Trunk Username/Password**: (Opcional) Credenciales SIP
+     - **Nickname**: (Opcional) Nombre descriptivo
+
+3. **Progreso de Importación**:
+   - El sistema importará cada número telefónico individualmente
+   - Se mostrará el progreso en tiempo real
+   - Al finalizar, se mostrará un resumen de éxitos y fallos
+
+### Endpoints de API
+
+#### Importar números (batch)
+```
+POST /api/retell/import
+Content-Type: application/json
+
+{
+  "outputId": "uuid-del-procesamiento",
+  "apiKey": "tu_api_key",
+  "terminationUri": "ia.conecta-bit.com",
+  "outboundAgentId": "agent_xxx",
+  "outboundTransport": "UDP",
+  "sipTrunkUsername": "opcional",
+  "sipTrunkPassword": "opcional",
+  "nickname": "opcional"
+}
+```
+
+#### Importar un solo número
+```
+POST /api/retell/import-single
+Content-Type: application/json
+
+{
+  "apiKey": "tu_api_key",
+  "phoneNumber": "+573146816250",
+  "terminationUri": "ia.conecta-bit.com",
+  "outboundAgentId": "agent_xxx",
+  "outboundTransport": "UDP"
+}
+```
+
+#### Eliminar número
+```
+DELETE /api/retell/delete/:phoneNumberId
+Content-Type: application/json
+
+{
+  "apiKey": "tu_api_key"
+}
+```
+
+### Notas
+
+- Todos los números deben estar en formato internacional con `+`
+- El sistema valida el formato antes de importar
+- Se implementa un pequeño delay entre peticiones para evitar rate limiting
+- Los errores se reportan individualmente por número
