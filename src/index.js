@@ -10,6 +10,7 @@ import {
   exportResumenPorPais,
   exportNumerosGenerados,
   exportCsvLimpio,
+  exportBatchCallFormat,
 } from './exporter/csvExporter.js';
 import { COUNTRY_ALIASES } from './config/countryRules.js';
 
@@ -55,6 +56,11 @@ export function processFromString(csvContent, options = {}) {
   const numerosPath = `${outputDir}/numeros_generados.csv`;
   exportNumerosGenerados(numerosPath, generated);
   outputFiles.push(numerosPath);
+
+  // Exportar también en formato compatible con Batch Calling
+  const batchCallPath = `${outputDir}/numeros_batch_calling.csv`;
+  exportBatchCallFormat(batchCallPath, generated, true);
+  outputFiles.push(batchCallPath);
 
   if (exportCleanCsv) {
     const cleanPath = `${outputDir}/datos_limpios.csv`;
@@ -102,6 +108,11 @@ export async function processFromFile(inputPath, options = {}) {
   const numerosPath = `${outputDir}/numeros_generados.csv`;
   exportNumerosGenerados(numerosPath, generated);
   outputFiles.push(numerosPath);
+
+  // Exportar también en formato compatible con Batch Calling
+  const batchCallPath = `${outputDir}/numeros_batch_calling.csv`;
+  exportBatchCallFormat(batchCallPath, generated, true);
+  outputFiles.push(batchCallPath);
 
   if (exportCleanCsv) {
     const cleanPath = `${outputDir}/datos_limpios.csv`;

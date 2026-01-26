@@ -373,6 +373,9 @@
     <button class="tab-btn" id="tabImport" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
       Importar a Retell AI
     </button>
+    <button class="tab-btn" id="tabBatchCall" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
+      Batch Calling
+    </button>
     <button class="tab-btn" id="tabManage" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
       Gestionar Números
     </button>
@@ -476,6 +479,87 @@
       </div>
       <button type="submit" class="btn" id="directImportSubmitBtn">Importar Números</button>
       <div id="directImportMsg"></div>
+    </form>
+  </div>
+
+  <!-- Sección de Batch Calling -->
+  <div class="card card-large" id="batchCallSection" style="display: none;">
+    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">Create Batch Call</h2>
+    
+    <form id="batchCallForm">
+      <!-- Paso 1: Cargar CSV -->
+      <div class="form-group">
+        <label for="batchCallCsvFile">Archivo CSV con contactos *</label>
+        <input type="file" id="batchCallCsvFile" accept=".csv" required />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          El CSV debe tener una columna "phone_number" o "PhoneNumber". Todas las demás columnas se convertirán en variables personalizadas.
+        </small>
+      </div>
+
+      <!-- Preview del CSV -->
+      <div id="batchCallPreview" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
+        <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem;">Preview del CSV (primeras 5 filas)</h3>
+        <div id="batchCallPreviewContent" style="font-size: 0.85rem; font-family: monospace; max-height: 200px; overflow-y: auto;"></div>
+      </div>
+
+      <!-- Paso 2: Configuración -->
+      <div class="form-group" style="margin-top: 1.5rem;">
+        <label for="batchCallAgentId">Agent ID (opcional)</label>
+        <input type="text" id="batchCallAgentId" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          El agente normalmente ya está asociado al número telefónico (from_number) en Retell AI. Si se especifica aquí, se usará como override para cada llamada.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="batchCallApiKey">API Key de Retell AI *</label>
+        <input type="password" id="batchCallApiKey" placeholder="Ingresa tu API Key" required />
+      </div>
+
+      <div class="form-group">
+        <label for="batchCallBatchName">Batch Name (opcional)</label>
+        <input type="text" id="batchCallBatchName" placeholder="Auto-generate based on country" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Si no se especifica, se generará automáticamente basado en el país/prefijo (ej: "Batch - Colombia 1")
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="batchCallStartTime">Start Time (opcional)</label>
+        <input type="datetime-local" id="batchCallStartTime" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Si no se especifica, el batch se enviará inmediatamente. Si se especifica, se programará para esa fecha/hora.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="batchCallReservedConcurrency">Reserved Concurrency (opcional)</label>
+        <input type="number" id="batchCallReservedConcurrency" min="0" max="100" value="0" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Número de concurrencia reservada para otras llamadas que no son batch calls (como llamadas entrantes). Si se omite, se usa 0.
+        </small>
+      </div>
+
+      <!-- Resumen antes de crear -->
+      <div id="batchCallSummary" style="display: none; margin-top: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
+        <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem;">Resumen</h3>
+        <div id="batchCallSummaryContent"></div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress" id="batchCallProgress" style="margin-top: 1rem;">
+        <div class="progress-bar">
+          <div class="progress-fill" id="batchCallProgressFill"></div>
+        </div>
+        <div class="progress-text" id="batchCallProgressText">0 / 0</div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="button" class="btn btn-secondary" id="batchCallCancelBtn" style="flex: 1;">Cancelar</button>
+        <button type="submit" class="btn" id="batchCallSubmitBtn" style="flex: 2;">Create Batches</button>
+      </div>
+
+      <div id="batchCallMsg" style="margin-top: 1rem;"></div>
     </form>
   </div>
 
@@ -688,11 +772,19 @@
         }
 
         links.innerHTML = '';
+        const fileLabels = {
+          resumen: 'Resumen por País',
+          numeros: 'Números Generados',
+          batch_calling: 'Números Batch Calling',
+          datos_limpios: 'Datos Limpios',
+        };
         for (const [label, path] of Object.entries(data.files || {})) {
           const a = document.createElement('a');
           a.href = API + path;
           a.download = path.split('/').pop();
-          a.textContent = 'Descargar ' + path.split('/').pop();
+          const fileName = path.split('/').pop();
+          const displayLabel = fileLabels[label] || fileName;
+          a.textContent = `Descargar ${displayLabel}`;
           links.appendChild(a);
         }
         resumen.style.display = 'block';
@@ -1047,27 +1139,33 @@
     tabProcess.addEventListener('click', () => {
       processSection.style.display = 'block';
       importSection.style.display = 'none';
+      batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
       tabProcess.classList.add('active');
       tabImport.classList.remove('active');
+      tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
     });
 
     tabImport.addEventListener('click', () => {
       processSection.style.display = 'none';
       importSection.style.display = 'block';
+      batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
       tabProcess.classList.remove('active');
       tabImport.classList.add('active');
+      tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
     });
 
     tabManage.addEventListener('click', () => {
       processSection.style.display = 'none';
       importSection.style.display = 'none';
+      batchCallSection.style.display = 'none';
       manageSection.style.display = 'block';
       tabProcess.classList.remove('active');
       tabImport.classList.remove('active');
+      tabBatchCall.classList.remove('active');
       tabManage.classList.add('active');
     });
 
@@ -1321,6 +1419,228 @@
         directProgress.classList.remove('active');
         directImportSubmitBtn.disabled = false;
       }
+    });
+
+    // ===== SECCIÓN DE BATCH CALLING =====
+    const batchCallSection = document.getElementById('batchCallSection');
+    const tabBatchCall = document.getElementById('tabBatchCall');
+    const batchCallForm = document.getElementById('batchCallForm');
+    const batchCallCsvFile = document.getElementById('batchCallCsvFile');
+    const batchCallPreview = document.getElementById('batchCallPreview');
+    const batchCallPreviewContent = document.getElementById('batchCallPreviewContent');
+    const batchCallSummary = document.getElementById('batchCallSummary');
+    const batchCallSummaryContent = document.getElementById('batchCallSummaryContent');
+    const batchCallProgress = document.getElementById('batchCallProgress');
+    const batchCallProgressFill = document.getElementById('batchCallProgressFill');
+    const batchCallProgressText = document.getElementById('batchCallProgressText');
+    const batchCallSubmitBtn = document.getElementById('batchCallSubmitBtn');
+    const batchCallCancelBtn = document.getElementById('batchCallCancelBtn');
+    const batchCallMsg = document.getElementById('batchCallMsg');
+    const batchCallApiKeyInput = document.getElementById('batchCallApiKey');
+
+    let batchCallCsvData = null;
+    let batchCallGeneratedNumbers = null;
+
+    // Navegación a Batch Calling
+    tabBatchCall.addEventListener('click', () => {
+      processSection.style.display = 'none';
+      importSection.style.display = 'none';
+      manageSection.style.display = 'none';
+      batchCallSection.style.display = 'block';
+      tabProcess.classList.remove('active');
+      tabImport.classList.remove('active');
+      tabManage.classList.remove('active');
+      tabBatchCall.classList.add('active');
+    });
+
+    // Preview del CSV cuando se selecciona
+    batchCallCsvFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      batchCallMsg.textContent = 'Validando CSV...';
+      batchCallMsg.className = 'msg';
+
+      try {
+        const text = await file.text();
+        batchCallCsvData = text;
+
+        // Validar y mostrar preview
+        const response = await fetch(API + '/api/retell/validate-batch-csv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ csvContent: text }),
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.preview && result.preview.length > 0) {
+          // Mostrar preview
+          let previewHTML = '<table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;"><thead><tr>';
+          
+          // Obtener todas las claves únicas de todas las filas
+          const allKeys = new Set();
+          result.preview.forEach(row => {
+            Object.keys(row).forEach(k => allKeys.add(k));
+          });
+          const headers = Array.from(allKeys);
+          
+          headers.forEach(h => {
+            previewHTML += `<th style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg);">${h}</th>`;
+          });
+          previewHTML += '</tr></thead><tbody>';
+
+          result.preview.forEach(row => {
+            previewHTML += '<tr>';
+            headers.forEach(h => {
+              const value = row[h] || '';
+              previewHTML += `<td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">${String(value).substring(0, 30)}${String(value).length > 30 ? '...' : ''}</td>`;
+            });
+            previewHTML += '</tr>';
+          });
+          previewHTML += '</tbody></table>';
+          previewHTML += `<p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">Total: ${result.total} contactos válidos</p>`;
+
+          batchCallPreviewContent.innerHTML = previewHTML;
+          batchCallPreview.style.display = 'block';
+          batchCallMsg.textContent = `CSV válido: ${result.total} contactos encontrados`;
+          batchCallMsg.className = 'msg ok';
+        } else {
+          batchCallMsg.textContent = result.error || 'Error al validar el CSV';
+          batchCallMsg.className = 'msg error';
+          batchCallPreview.style.display = 'none';
+        }
+      } catch (error) {
+        batchCallMsg.textContent = 'Error al leer el archivo: ' + error.message;
+        batchCallMsg.className = 'msg error';
+        batchCallPreview.style.display = 'none';
+      }
+    });
+
+    // Cargar números generados cuando se ingresa API Key
+    if (batchCallApiKeyInput) {
+      batchCallApiKeyInput.addEventListener('blur', async () => {
+        const apiKey = batchCallApiKeyInput.value.trim();
+        if (apiKey) {
+          try {
+            const response = await fetch(API + '/api/retell/list?apiKey=' + encodeURIComponent(apiKey));
+            const result = await response.json();
+            if (result.success) {
+              batchCallGeneratedNumbers = result.phoneNumbers || [];
+              if (batchCallGeneratedNumbers.length > 0) {
+                batchCallMsg.textContent = `${batchCallGeneratedNumbers.length} números telefónicos disponibles`;
+                batchCallMsg.className = 'msg ok';
+              }
+            }
+          } catch (error) {
+            console.error('Error al cargar números:', error);
+          }
+        }
+      });
+    }
+
+    // Formulario de Batch Call
+    batchCallForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!batchCallCsvData) {
+        batchCallMsg.textContent = 'Error: Debes seleccionar un archivo CSV';
+        batchCallMsg.className = 'msg error';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('csvFile', batchCallCsvFile.files[0]);
+      formData.append('apiKey', batchCallApiKeyInput.value);
+      
+      const agentId = document.getElementById('batchCallAgentId').value.trim();
+      if (agentId) {
+        formData.append('agent_id', agentId);
+      }
+      
+      const batchName = document.getElementById('batchCallBatchName').value.trim();
+      if (batchName) {
+        formData.append('batch_name', batchName);
+      }
+
+      const startTime = document.getElementById('batchCallStartTime').value;
+      if (startTime) {
+        formData.append('start_time', new Date(startTime).toISOString());
+      }
+
+      const reservedConcurrency = document.getElementById('batchCallReservedConcurrency').value;
+      if (reservedConcurrency) {
+        formData.append('reserved_concurrency', reservedConcurrency);
+      }
+
+      // Si hay números generados, enviarlos también
+      if (batchCallGeneratedNumbers && batchCallGeneratedNumbers.length > 0) {
+        formData.append('generatedNumbers', JSON.stringify(batchCallGeneratedNumbers));
+      }
+
+      batchCallSubmitBtn.disabled = true;
+      batchCallMsg.textContent = '';
+      batchCallProgress.classList.add('active');
+      batchCallProgressFill.style.width = '0%';
+      batchCallProgressText.textContent = 'Creando batches...';
+
+      try {
+        const response = await fetch(API + '/api/retell/create-batch-call', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          batchCallProgressFill.style.width = '100%';
+          batchCallProgressText.textContent = 'Completado';
+
+          let msgHTML = `<div class="msg ok">`;
+          msgHTML += `<strong>Batches creados exitosamente:</strong><br>`;
+          msgHTML += `Total contactos: ${result.total_contacts}<br>`;
+          msgHTML += `Batches creados: ${result.batches_created}<br>`;
+          if (result.batches_failed > 0) {
+            msgHTML += `Batches fallidos: ${result.batches_failed}<br>`;
+          }
+          msgHTML += `<br><strong>Detalles:</strong><br>`;
+          result.results.forEach((r, idx) => {
+            msgHTML += `${idx + 1}. ${r.batch_name || r.from_number}: ${r.total_calls} contactos (ID: ${r.batch_call_id})<br>`;
+          });
+          msgHTML += `</div>`;
+
+          batchCallMsg.innerHTML = msgHTML;
+
+          // Mostrar resumen
+          let summaryHTML = `<p><strong>Total contactos:</strong> ${result.total_contacts}</p>`;
+          summaryHTML += `<p><strong>Batches a crear:</strong> ${result.batches_created}</p>`;
+          summaryHTML += `<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">`;
+          result.results.forEach(r => {
+            summaryHTML += `<li>${r.nickname || r.from_number} (${r.from_number}): ${r.total_calls} contactos</li>`;
+          });
+          summaryHTML += `</ul>`;
+          summaryHTML += `<p style="color: var(--accent);"><strong>Status:</strong> Creating as DRAFT ✓</p>`;
+          batchCallSummaryContent.innerHTML = summaryHTML;
+          batchCallSummary.style.display = 'block';
+        } else {
+          batchCallMsg.textContent = result.error || 'Error al crear batches';
+          batchCallMsg.className = 'msg error';
+        }
+      } catch (error) {
+        batchCallMsg.textContent = 'Error: ' + error.message;
+        batchCallMsg.className = 'msg error';
+      } finally {
+        batchCallSubmitBtn.disabled = false;
+      }
+    });
+
+    batchCallCancelBtn.addEventListener('click', () => {
+      batchCallForm.reset();
+      batchCallCsvData = null;
+      batchCallPreview.style.display = 'none';
+      batchCallSummary.style.display = 'none';
+      batchCallProgress.classList.remove('active');
+      batchCallMsg.textContent = '';
     });
 
     // ===== SECCIÓN DE GESTIÓN DE NÚMEROS =====

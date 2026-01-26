@@ -84,3 +84,37 @@ export function exportCsvLimpio(filePath, rows) {
   });
   writeCsv(filePath, filtered, headers);
 }
+
+/**
+ * Exporta números generados en formato compatible con Batch Calling.
+ * Formato: una fila por número con columna phone_number (obligatoria para batch calling).
+ * Opcionalmente incluye otras columnas como variables personalizadas.
+ * @param {string} filePath
+ * @param {Array<{ pais: string, numero_generado: string }>} rows - lista de {pais, numero_generado} con formato E.164 (+57...)
+ * @param {boolean} includeCountry - Si true, incluye columna 'pais' como variable personalizada
+ */
+export function exportBatchCallFormat(filePath, rows, includeCountry = true) {
+  const csvRows = [];
+  
+  for (const r of rows) {
+    const numero = r.numero_generado || r.numero || '';
+    if (!numero) continue;
+    
+    // Asegurar que el número tenga el formato E.164 con +
+    const phoneNumber = numero.startsWith('+') ? numero : `+${numero}`;
+    
+    const row = {
+      phone_number: phoneNumber,
+    };
+    
+    // Si se incluye país, agregarlo como variable personalizada
+    if (includeCountry && r.pais) {
+      row.pais = r.pais;
+    }
+    
+    csvRows.push(row);
+  }
+  
+  const headers = includeCountry ? ['phone_number', 'pais'] : ['phone_number'];
+  writeCsv(filePath, csvRows, headers);
+}

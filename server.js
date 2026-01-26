@@ -12,7 +12,8 @@ import { join } from 'path';
 import { randomUUID } from 'crypto';
 import cors from 'cors';
 import { processFromString } from './src/index.js';
-import { importPhoneNumber, deletePhoneNumber, importPhoneNumbersBatch, listPhoneNumbers } from './src/integrations/retellAI.js';
+import { importPhoneNumber, deletePhoneNumber, importPhoneNumbersBatch, listPhoneNumbers, createBatchCall, listBatchCalls } from './src/integrations/retellAI.js';
+import { parseBatchCallCSV, groupContactsByPrefix } from './src/batchCall/batchCallUtils.js';
 
 /**
  * Genera un nickname incremental basado en un patrón
@@ -93,6 +94,7 @@ app.post('/api/process', upload.single('file'), (req, res) => {
       files: {
         resumen: `/api/download/${id}/resumen_por_pais.csv`,
         numeros: `/api/download/${id}/numeros_generados.csv`,
+        batch_calling: `/api/download/${id}/numeros_batch_calling.csv`,
         ...(clean ? { datos_limpios: `/api/download/${id}/datos_limpios.csv` } : {}),
       },
     });
@@ -103,7 +105,7 @@ app.post('/api/process', upload.single('file'), (req, res) => {
 
 app.get('/api/download/:id/:name', (req, res) => {
   const { id, name } = req.params;
-  const allowed = ['resumen_por_pais.csv', 'numeros_generados.csv', 'datos_limpios.csv'];
+  const allowed = ['resumen_por_pais.csv', 'numeros_generados.csv', 'numeros_batch_calling.csv', 'datos_limpios.csv'];
   if (!allowed.includes(name)) {
     res.status(404).end();
     return;
@@ -572,6 +574,264 @@ app.delete('/api/retell/delete/:phoneNumberId', async (req, res) => {
     }
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * Endpoint para crear batch calls
+ * POST /api/retell/create-batch-call
+ * Body: {
+ *   apiKey: string,
+ *   csvContent: string (opcional, si se envía CSV directamente),
+ *   csvFile: File (opcional, si se sube archivo),
+ *   agent_id?: string (opcional, se usará como override_agent_id en cada task),
+ *   batch_name?: string,
+ *   start_time?: string (ISO 8601, se convertirá a trigger_timestamp),
+ *   reserved_concurrency?: number (concurrencia reservada para otras llamadas),
+ *   generatedNumbers?: Array<{phone_number: string, nickname?: string}> (números generados disponibles)
+ * }
+ * 
+ * Nota: Según documentación de Retell AI (https://docs.retellai.com/api-references/create-batch-call):
+ * - El agente se asocia al from_number cuando se importa el número a Retell AI
+ * - Si se proporciona agent_id, se usará como override_agent_id en cada task
+ * - start_time se convierte a trigger_timestamp (Unix timestamp en milisegundos)
+ */
+app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, res) => {
+  try {
+    const {
+      apiKey,
+      csvContent,
+      agent_id,
+      batch_name,
+      start_time,
+      reserved_concurrency,
+      generatedNumbers: generatedNumbersJson,
+    } = req.body;
+
+    if (!apiKey) {
+      res.status(400).json({ error: 'API Key es requerida' });
+      return;
+    }
+    // Nota: agent_id no es requerido en el batch call según la documentación
+    // El agente se asocia al from_number cuando se importa el número a Retell AI
+    // Si se proporciona agent_id, se usará como override_agent_id en cada task
+
+    // Obtener contenido CSV
+    let csv = csvContent;
+    if (!csv && req.file && req.file.buffer) {
+      csv = req.file.buffer.toString('utf8');
+    }
+    if (!csv) {
+      res.status(400).json({ error: 'Debe proporcionar un CSV (csvContent o csvFile)' });
+      return;
+    }
+
+    // Parsear CSV
+    const parseResult = await parseBatchCallCSV(csv);
+    if (!parseResult.success) {
+      res.status(400).json({ error: parseResult.error, errors: parseResult.errors });
+      return;
+    }
+
+    const contacts = parseResult.contacts;
+
+    // Obtener números generados disponibles
+    let generatedNumbers = [];
+    if (generatedNumbersJson) {
+      try {
+        generatedNumbers = typeof generatedNumbersJson === 'string' 
+          ? JSON.parse(generatedNumbersJson) 
+          : generatedNumbersJson;
+      } catch (e) {
+        // Si falla el parse, intentar obtener desde Retell AI
+        const listResult = await listPhoneNumbers({ apiKey });
+        if (listResult.success) {
+          generatedNumbers = listResult.data || [];
+        }
+      }
+    } else {
+      // Si no se proporcionaron, obtener desde Retell AI
+      const listResult = await listPhoneNumbers({ apiKey });
+      if (listResult.success) {
+        generatedNumbers = listResult.data || [];
+      }
+    }
+
+    if (generatedNumbers.length === 0) {
+      res.status(400).json({ error: 'No hay números telefónicos generados disponibles. Debes importar números primero.' });
+      return;
+    }
+
+    // Normalizar números generados
+    const normalizedGeneratedNumbers = generatedNumbers.map(gn => ({
+      phone_number: gn.phone_number || gn.numero_generado || gn,
+      nickname: gn.nickname || gn.pais || null,
+    }));
+
+    // Agrupar contactos por prefijo
+    const groups = groupContactsByPrefix(contacts, normalizedGeneratedNumbers);
+
+    if (groups.length === 0) {
+      res.status(400).json({ 
+        error: 'No se encontraron números generados que coincidan con los prefijos de los contactos del CSV. Verifica que los números generados tengan prefijos compatibles con los números del CSV.' 
+      });
+      return;
+    }
+
+    // Crear batches
+    const results = [];
+    const errors = [];
+
+    for (const group of groups) {
+      try {
+        // Preparar tasks para el batch
+        // Nota: El agente se asocia al from_number, no al batch call directamente
+        // Si se necesita override por task, se puede agregar override_agent_id en cada task
+        const tasks = group.contacts.map(contact => {
+          const task = {
+            phone_number: contact.phone_number, // Se convertirá a to_number en createBatchCall
+            variables: contact.variables, // Se convertirá a retell_llm_dynamic_variables
+          };
+          
+          // Si se proporciona agent_id, agregarlo como override (opcional)
+          // El agente normalmente ya está asociado al from_number en Retell AI
+          if (agent_id) {
+            task.override_agent_id = agent_id;
+          }
+          
+          return task;
+        });
+
+        // Generar nombre del batch si no se proporcionó
+        let batchName = batch_name;
+        if (!batchName && group.nickname) {
+          batchName = `Batch - ${group.nickname}`;
+        } else if (!batchName) {
+          batchName = `Batch - ${group.from_number}`;
+        }
+
+        // Convertir start_time a trigger_timestamp (Unix timestamp en milisegundos)
+        let triggerTimestamp = undefined;
+        if (start_time) {
+          const date = new Date(start_time);
+          if (!isNaN(date.getTime())) {
+            triggerTimestamp = date.getTime(); // Unix timestamp en milisegundos
+          }
+        }
+
+        // Crear batch call según documentación oficial
+        const batchResult = await createBatchCall({
+          apiKey,
+          from_number: group.from_number,
+          tasks,
+          name: batchName,
+          trigger_timestamp: triggerTimestamp,
+          reserved_concurrency: reserved_concurrency ? parseInt(reserved_concurrency, 10) : undefined,
+        });
+
+        if (batchResult.success) {
+          results.push({
+            success: true,
+            batch_call_id: batchResult.batch_call_id,
+            from_number: group.from_number,
+            nickname: group.nickname,
+            total_calls: tasks.length,
+            batch_name: batchName,
+            data: batchResult.data,
+          });
+        } else {
+          errors.push({
+            from_number: group.from_number,
+            nickname: group.nickname,
+            error: batchResult.error || 'Error desconocido',
+            statusCode: batchResult.statusCode,
+            total_calls: tasks.length,
+            responseData: batchResult.data, // Incluir respuesta completa para debugging
+          });
+        }
+
+        // Pequeña pausa para evitar rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (error) {
+        errors.push({
+          from_number: group.from_number,
+          nickname: group.nickname,
+          error: error.message || 'Error desconocido',
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      total_contacts: contacts.length,
+      batches_created: results.length,
+      batches_failed: errors.length,
+      results,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'Error interno del servidor' });
+  }
+});
+
+/**
+ * Endpoint para validar CSV de batch calls
+ * POST /api/retell/validate-batch-csv
+ * Body: { csvContent: string }
+ */
+app.post('/api/retell/validate-batch-csv', async (req, res) => {
+  try {
+    const { csvContent } = req.body;
+
+    if (!csvContent) {
+      res.status(400).json({ error: 'csvContent es requerido' });
+      return;
+    }
+
+    const parseResult = await parseBatchCallCSV(csvContent);
+    
+    if (parseResult.success) {
+      res.json({
+        success: true,
+        total: parseResult.total,
+        preview: parseResult.preview,
+        errors: parseResult.errors,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: parseResult.error,
+        errors: parseResult.errors,
+      });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'Error interno del servidor' });
+  }
+});
+
+/**
+ * Endpoint para listar batch calls
+ * GET /api/retell/list-batch-calls?apiKey=...
+ */
+app.get('/api/retell/list-batch-calls', async (req, res) => {
+  try {
+    const { apiKey } = req.query;
+
+    if (!apiKey) {
+      res.status(400).json({ error: 'API Key es requerida' });
+      return;
+    }
+
+    const result = await listBatchCalls({ apiKey });
+
+    if (result.success) {
+      res.json({ success: true, batchCalls: result.data || [] });
+    } else {
+      res.status(400).json({ success: false, error: result.error || 'Error desconocido' });
+    }
+  } catch (e) {
+    console.error('Error en /api/retell/list-batch-calls:', e);
+    res.status(500).json({ error: e.message || 'Error interno del servidor', stack: process.env.NODE_ENV === 'development' ? e.stack : undefined });
   }
 });
 
