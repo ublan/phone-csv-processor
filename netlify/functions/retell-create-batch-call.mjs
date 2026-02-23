@@ -1,5 +1,6 @@
 import { createBatchCall, listPhoneNumbers } from '../../src/integrations/retellAI.js';
 import { parseBatchCallCSV, groupContactsByPrefix } from '../../src/batchCall/batchCallUtils.js';
+import Busboy from 'busboy';
 
 function corsHeaders() {
   return {
@@ -7,6 +8,62 @@ function corsHeaders() {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
+}
+
+function parseMultipart(event) {
+  return new Promise((resolve, reject) => {
+    const ct = event.headers['content-type'] || event.headers['Content-Type'] || '';
+    const bodyBuffer = event.isBase64Encoded
+      ? Buffer.from(event.body || '', 'base64')
+      : Buffer.from(event.body || '', 'utf8');
+
+    const busboy = Busboy({ headers: { 'content-type': ct } });
+
+    let apiKey = '';
+    let csvContent = '';
+    let agent_id = '';
+    let batch_name = '';
+    let start_time = '';
+    let reserved_concurrency = '';
+    let generatedNumbersJson = '';
+
+    busboy.on('file', (name, file) => {
+      if (name !== 'csvFile') {
+        file.resume();
+        return;
+      }
+      const chunks = [];
+      file.on('data', (chunk) => chunks.push(chunk));
+      file.on('end', () => {
+        csvContent = Buffer.concat(chunks).toString('utf8');
+      });
+    });
+
+    busboy.on('field', (name, value) => {
+      if (name === 'apiKey') apiKey = value;
+      else if (name === 'csvContent') csvContent = value;
+      else if (name === 'agent_id') agent_id = value;
+      else if (name === 'batch_name') batch_name = value;
+      else if (name === 'start_time') start_time = value;
+      else if (name === 'reserved_concurrency') reserved_concurrency = value;
+      else if (name === 'generatedNumbers') generatedNumbersJson = value;
+    });
+
+    busboy.on('finish', () => {
+      resolve({
+        apiKey,
+        csvContent,
+        agent_id,
+        batch_name,
+        start_time,
+        reserved_concurrency,
+        generatedNumbersJson,
+      });
+    });
+
+    busboy.on('error', reject);
+    busboy.end(bodyBuffer);
+  });
 }
 
 export const handler = async (event) => {
@@ -22,16 +79,44 @@ export const handler = async (event) => {
   }
 
   try {
-    const body = JSON.parse(event.body || '{}');
-    const {
-      apiKey,
-      csvContent,
-      agent_id,
-      batch_name,
-      start_time,
-      reserved_concurrency,
-      generatedNumbers: generatedNumbersJson,
-    } = body;
+    const contentType =
+      (event.headers['content-type'] || event.headers['Content-Type'] || '').toLowerCase();
+
+    let apiKey = '';
+    let csvContent = '';
+    let agent_id = '';
+    let batch_name = '';
+    let start_time = '';
+    let reserved_concurrency = '';
+    let generatedNumbersJson = '';
+
+    if (contentType.includes('application/json')) {
+      const body = JSON.parse(event.body || '{}');
+      apiKey = body.apiKey || '';
+      csvContent = body.csvContent || '';
+      agent_id = body.agent_id || '';
+      batch_name = body.batch_name || '';
+      start_time = body.start_time || '';
+      reserved_concurrency = body.reserved_concurrency || '';
+      generatedNumbersJson = body.generatedNumbers || '';
+    } else if (contentType.includes('multipart/form-data')) {
+      const parsed = await parseMultipart(event);
+      apiKey = parsed.apiKey || '';
+      csvContent = parsed.csvContent || '';
+      agent_id = parsed.agent_id || '';
+      batch_name = parsed.batch_name || '';
+      start_time = parsed.start_time || '';
+      reserved_concurrency = parsed.reserved_concurrency || '';
+      generatedNumbersJson = parsed.generatedNumbersJson || '';
+    } else {
+      return {
+        statusCode: 400,
+        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          error: 'Content-Type debe ser application/json o multipart/form-data',
+        }),
+      };
+    }
 
     if (!apiKey) {
       return {
@@ -44,7 +129,7 @@ export const handler = async (event) => {
       return {
         statusCode: 400,
         headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Debe proporcionar csvContent en el body' }),
+        body: JSON.stringify({ error: 'Debe proporcionar un CSV (csvContent o csvFile)' }),
       };
     }
 
