@@ -724,6 +724,8 @@
 
     let selected = null;
     let currentOutputId = null;
+    /** Números extraídos del último CSV procesado (para importar sin import-stream en Netlify) */
+    let lastProcessedPhoneNumbers = [];
 
     zone.addEventListener('click', () => fileInput.click());
     zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -800,9 +802,21 @@
 
         resumen.style.display = 'block';
         
-        // Guardar outputId (solo informativo, ya no se usa para descargar archivos)
         currentOutputId = data.outputId;
-        if (currentOutputId) {
+        lastProcessedPhoneNumbers = [];
+        if (data.files && data.files.numeros && data.files.numeros.content) {
+          const content = data.files.numeros.content;
+          const lines = content.split(/\r?\n/).filter(l => l.trim());
+          for (let i = 1; i < lines.length; i++) {
+            const m = lines[i].match(/^[^,]+,"([^"]+)"/);
+            if (m) {
+              const nums = m[1].split(/,\s*/).map(n => n.trim()).filter(n => n);
+              lastProcessedPhoneNumbers.push(...nums.map(n => n.startsWith('+') ? n : '+' + n));
+            }
+          }
+          lastProcessedPhoneNumbers = [...new Set(lastProcessedPhoneNumbers)];
+        }
+        if (lastProcessedPhoneNumbers.length > 0) {
           importBtn.style.display = 'block';
           const processedOption = directNumberSource.querySelector('option[value="processed"]');
           if (processedOption) {
@@ -850,12 +864,12 @@
 
       // Obtener números según la fuente seleccionada
       if (source === 'processed') {
-        if (!currentOutputId) {
+        if (!lastProcessedPhoneNumbers || lastProcessedPhoneNumbers.length === 0) {
           importMsg.textContent = 'Error: No hay números procesados. Procesa un CSV primero o selecciona otra fuente.';
           importMsg.className = 'msg error';
           return;
         }
-        // Los números se leerán del CSV en el servidor usando outputId
+        phoneNumbers = lastProcessedPhoneNumbers;
       } else if (source === 'csv') {
         const file = csvFile.files[0];
         if (!file) {
@@ -911,7 +925,7 @@
       const formData = {
         source: source,
         outputId: source === 'processed' ? currentOutputId : null,
-        phoneNumbers: source !== 'processed' ? phoneNumbers : null,
+        phoneNumbers: phoneNumbers,
         apiKey: document.getElementById('apiKey').value,
         terminationUri: document.getElementById('terminationUri').value,
         outboundTransport: document.getElementById('outboundTransport').value,
@@ -998,127 +1012,30 @@
       }
 
       try {
-        // Construir parámetros para la petición
-        const params = new URLSearchParams({
-          source: formData.source,
-          apiKey: formData.apiKey,
-          terminationUri: formData.terminationUri,
-          outboundTransport: formData.outboundTransport,
-          outboundAgentId: formData.outboundAgentId,
-          sipTrunkUsername: formData.sipTrunkUsername || '',
-          sipTrunkPassword: formData.sipTrunkPassword || '',
-          nickname: formData.nickname || '',
+        importMsg.textContent = 'Importando números...';
+        importMsg.className = 'msg';
+        progress.classList.add('active');
+        progressText.textContent = `0 / ${formData.phoneNumbers.length}`;
+
+        const response = await fetch(API + '/api/retell/import-direct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumbers: formData.phoneNumbers,
+            apiKey: formData.apiKey,
+            terminationUri: formData.terminationUri,
+            outboundTransport: formData.outboundTransport,
+            outboundAgentId: formData.outboundAgentId,
+            sipTrunkUsername: formData.sipTrunkUsername || '',
+            sipTrunkPassword: formData.sipTrunkPassword || '',
+            nickname: formData.nickname || '',
+          }),
         });
 
-        if (formData.source === 'processed') {
-          params.append('outputId', formData.outputId);
-        } else {
-          // Enviar números en el body usando POST en lugar de GET
-          // Usaremos fetch con POST y EventSource no funciona con POST, así que usaremos fetch con streaming
-          importMsg.textContent = 'Iniciando importación...';
-          importMsg.className = 'msg';
-          progress.classList.add('active');
-          
-          const response = await fetch(API + '/api/retell/import-direct', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phoneNumbers: formData.phoneNumbers,
-              ...formData,
-            }),
-          });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al importar');
 
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al importar');
-          }
-
-          // Leer el stream de respuesta (formato SSE)
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const events = buffer.split('\n\n');
-            buffer = events.pop() || '';
-
-            for (const event of events) {
-              if (!event.trim()) continue;
-              
-              let eventType = 'message';
-              let eventData = null;
-              
-              for (const line of event.split('\n')) {
-                if (line.startsWith('event: ')) {
-                  eventType = line.slice(7).trim();
-                } else if (line.startsWith('data: ')) {
-                  try {
-                    eventData = JSON.parse(line.slice(6));
-                    eventData.event = eventType;
-                    handleProgressEvent(eventData);
-                  } catch (e) {
-                    console.error('Error parsing event data:', e);
-                  }
-                }
-              }
-            }
-          }
-
-          importSubmitBtn.disabled = false;
-          return;
-        }
-
-        // Usar Server-Sent Events para progreso en tiempo real (solo para números procesados)
-        const eventSource = new EventSource(API + '/api/retell/import-stream?' + params);
-
-        eventSource.addEventListener('start', (e) => {
-          const data = JSON.parse(e.data);
-          handleProgressEvent({ type: 'start', ...data });
-        });
-
-        eventSource.addEventListener('progress', (e) => {
-          const data = JSON.parse(e.data);
-          handleProgressEvent({ type: 'progress', ...data });
-        });
-
-        eventSource.addEventListener('complete', (e) => {
-          const data = JSON.parse(e.data);
-          eventSource.close();
-          handleProgressEvent({ type: 'complete', ...data });
-        });
-
-        eventSource.addEventListener('error', (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            eventSource.close();
-            importMsg.textContent = data.error || 'Error al importar números';
-            importMsg.className = 'msg error';
-            progress.classList.remove('active');
-            importSubmitBtn.disabled = false;
-          } catch (err) {
-            // Error de conexión
-            eventSource.close();
-            importMsg.textContent = 'Error de conexión con el servidor';
-            importMsg.className = 'msg error';
-            progress.classList.remove('active');
-            importSubmitBtn.disabled = false;
-          }
-        });
-
-        // Manejar errores de conexión (solo para EventSource)
-        if (formData.source === 'processed') {
-          eventSource.onerror = (error) => {
-            eventSource.close();
-            importMsg.textContent = 'Error de conexión con el servidor';
-            importMsg.className = 'msg error';
-            progress.classList.remove('active');
-            importSubmitBtn.disabled = false;
-          };
-        }
+        handleProgressEvent({ type: 'complete', event: 'complete', ...data });
       } catch (error) {
         importMsg.textContent = error.message || 'Error al importar números';
         importMsg.className = 'msg error';
@@ -1213,11 +1130,12 @@
       let phoneNumbers = [];
 
       if (source === 'processed') {
-        if (!currentOutputId) {
+        if (!lastProcessedPhoneNumbers || lastProcessedPhoneNumbers.length === 0) {
           directImportMsg.textContent = 'Error: No hay números procesados. Procesa un CSV primero en la pestaña "Procesar CSV".';
           directImportMsg.className = 'msg error';
           return;
         }
+        phoneNumbers = lastProcessedPhoneNumbers;
       } else if (source === 'csv') {
         const file = directCsvFile.files[0];
         if (!file) {
@@ -1272,7 +1190,7 @@
       const formData = {
         source: source,
         outputId: source === 'processed' ? currentOutputId : null,
-        phoneNumbers: source !== 'processed' ? phoneNumbers : null,
+        phoneNumbers: phoneNumbers,
         apiKey: document.getElementById('directApiKey').value,
         terminationUri: document.getElementById('directTerminationUri').value,
         outboundTransport: document.getElementById('directOutboundTransport').value,
@@ -1329,9 +1247,13 @@
       }
 
       try {
-        if (formData.source === 'processed') {
-          const params = new URLSearchParams({
-            outputId: formData.outputId,
+        directProgressText.textContent = `0 / ${formData.phoneNumbers.length}`;
+
+        const response = await fetch(API + '/api/retell/import-direct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phoneNumbers: formData.phoneNumbers,
             apiKey: formData.apiKey,
             terminationUri: formData.terminationUri,
             outboundTransport: formData.outboundTransport,
@@ -1339,90 +1261,13 @@
             sipTrunkUsername: formData.sipTrunkUsername || '',
             sipTrunkPassword: formData.sipTrunkPassword || '',
             nickname: formData.nickname || '',
-          });
+          }),
+        });
 
-          const eventSource = new EventSource(API + '/api/retell/import-stream?' + params);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al importar');
 
-          eventSource.addEventListener('start', (e) => {
-            const data = JSON.parse(e.data);
-            handleDirectProgressEvent({ type: 'start', ...data });
-          });
-
-          eventSource.addEventListener('progress', (e) => {
-            const data = JSON.parse(e.data);
-            handleDirectProgressEvent({ type: 'progress', ...data });
-          });
-
-          eventSource.addEventListener('complete', (e) => {
-            const data = JSON.parse(e.data);
-            eventSource.close();
-            handleDirectProgressEvent({ type: 'complete', ...data });
-          });
-
-          eventSource.onerror = () => {
-            eventSource.close();
-            directImportMsg.textContent = 'Error de conexión con el servidor';
-            directImportMsg.className = 'msg error';
-            directProgress.classList.remove('active');
-            directImportSubmitBtn.disabled = false;
-          };
-        } else {
-          const response = await fetch(API + '/api/retell/import-direct', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phoneNumbers: formData.phoneNumbers,
-              apiKey: formData.apiKey,
-              terminationUri: formData.terminationUri,
-              outboundTransport: formData.outboundTransport,
-              outboundAgentId: formData.outboundAgentId,
-              sipTrunkUsername: formData.sipTrunkUsername,
-              sipTrunkPassword: formData.sipTrunkPassword,
-              nickname: formData.nickname,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Error al importar');
-          }
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const events = buffer.split('\n\n');
-            buffer = events.pop() || '';
-
-            for (const event of events) {
-              if (!event.trim()) continue;
-              
-              let eventType = 'message';
-              let eventData = null;
-              
-              for (const line of event.split('\n')) {
-                if (line.startsWith('event: ')) {
-                  eventType = line.slice(7).trim();
-                } else if (line.startsWith('data: ')) {
-                  try {
-                    eventData = JSON.parse(line.slice(6));
-                    eventData.event = eventType;
-                    handleDirectProgressEvent(eventData);
-                  } catch (e) {
-                    console.error('Error parsing event data:', e);
-                  }
-                }
-              }
-            }
-          }
-
-          directImportSubmitBtn.disabled = false;
-        }
+        handleDirectProgressEvent({ type: 'complete', event: 'complete', ...data });
       } catch (error) {
         directImportMsg.textContent = error.message || 'Error al importar números';
         directImportMsg.className = 'msg error';
@@ -1559,33 +1404,21 @@
         return;
       }
 
-      const formData = new FormData();
-      formData.append('csvFile', batchCallCsvFile.files[0]);
-      formData.append('apiKey', batchCallApiKeyInput.value);
-      
       const agentId = document.getElementById('batchCallAgentId').value.trim();
-      if (agentId) {
-        formData.append('agent_id', agentId);
-      }
-      
       const batchName = document.getElementById('batchCallBatchName').value.trim();
-      if (batchName) {
-        formData.append('batch_name', batchName);
-      }
-
       const startTime = document.getElementById('batchCallStartTime').value;
-      if (startTime) {
-        formData.append('start_time', new Date(startTime).toISOString());
-      }
-
       const reservedConcurrency = document.getElementById('batchCallReservedConcurrency').value;
-      if (reservedConcurrency) {
-        formData.append('reserved_concurrency', reservedConcurrency);
-      }
 
-      // Si hay números generados, enviarlos también
+      const body = {
+        apiKey: batchCallApiKeyInput.value,
+        csvContent: batchCallCsvData,
+      };
+      if (agentId) body.agent_id = agentId;
+      if (batchName) body.batch_name = batchName;
+      if (startTime) body.start_time = new Date(startTime).toISOString();
+      if (reservedConcurrency) body.reserved_concurrency = reservedConcurrency;
       if (batchCallGeneratedNumbers && batchCallGeneratedNumbers.length > 0) {
-        formData.append('generatedNumbers', JSON.stringify(batchCallGeneratedNumbers));
+        body.generatedNumbers = batchCallGeneratedNumbers;
       }
 
       batchCallSubmitBtn.disabled = true;
@@ -1597,7 +1430,8 @@
       try {
         const response = await fetch(API + '/api/retell/create-batch-call', {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
         });
 
         const result = await response.json();

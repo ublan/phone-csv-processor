@@ -7,6 +7,31 @@
    to = "/.netlify/functions/process"
    status = 200
 
+ [[redirects]]
+   from = "/api/retell/import-direct"
+   to = "/.netlify/functions/retell-import-direct"
+   status = 200
+ [[redirects]]
+   from = "/api/retell/list"
+   to = "/.netlify/functions/retell-list"
+   status = 200
+ [[redirects]]
+   from = "/api/retell/delete/*"
+   to = "/.netlify/functions/retell-delete"
+   status = 200
+ [[redirects]]
+   from = "/api/retell/validate-batch-csv"
+   to = "/.netlify/functions/retell-validate-batch-csv"
+   status = 200
+ [[redirects]]
+   from = "/api/retell/create-batch-call"
+   to = "/.netlify/functions/retell-create-batch-call"
+   status = 200
+ [[redirects]]
+   from = "/api/retell/list-batch-calls"
+   to = "/.netlify/functions/retell-list-batch-calls"
+   status = 200
+
  # Evitar caché del HTML para que siempre se sirva la versión nueva del frontend
  [[headers]]
    for = "/index.html"
