@@ -751,12 +751,18 @@
       msg.className = 'msg';
       resumen.style.display = 'none';
 
-      const form = new FormData();
-      form.append('file', selected);
-      const q = clean.checked ? '?clean=1' : '';
-
       try {
-        const r = await fetch(API + '/api/process' + q, { method: 'POST', body: form });
+        const csvText = await selected.text();
+
+        const r = await fetch(API + '/api/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            csvContent: csvText,
+            clean: !!clean.checked,
+          }),
+        });
+
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || 'Error en el servidor');
 
@@ -778,22 +784,26 @@
           batch_calling: 'Números Batch Calling',
           datos_limpios: 'Datos Limpios',
         };
-        for (const [label, path] of Object.entries(data.files || {})) {
+
+        for (const [label, fileInfo] of Object.entries(data.files || {})) {
+          if (!fileInfo || !fileInfo.content) continue;
+          const blob = new Blob([fileInfo.content], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+
           const a = document.createElement('a');
-          a.href = API + path;
-          a.download = path.split('/').pop();
-          const fileName = path.split('/').pop();
-          const displayLabel = fileLabels[label] || fileName;
+          a.href = url;
+          a.download = fileInfo.filename || (label + '.csv');
+          const displayLabel = fileLabels[label] || a.download;
           a.textContent = `Descargar ${displayLabel}`;
           links.appendChild(a);
         }
+
         resumen.style.display = 'block';
         
-        // Guardar outputId para importación
+        // Guardar outputId (solo informativo, ya no se usa para descargar archivos)
         currentOutputId = data.outputId;
         if (currentOutputId) {
           importBtn.style.display = 'block';
-          // Actualizar opción de números procesados en la sección directa
           const processedOption = directNumberSource.querySelector('option[value="processed"]');
           if (processedOption) {
             processedOption.textContent = 'Usar números procesados (disponible)';

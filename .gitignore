@@ -6,3 +6,6 @@ output/
 uploads/
 *.csv
 !ejemplo.csv
+
+# Local Netlify folder
+.netlify
