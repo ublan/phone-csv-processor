@@ -7,3 +7,13 @@
    to = "/.netlify/functions/process"
    status = 200
 
+ # Evitar caché del HTML para que siempre se sirva la versión nueva del frontend
+ [[headers]]
+   for = "/index.html"
+   [headers.values]
+     Cache-Control = "no-cache, no-store, must-revalidate"
+ [[headers]]
+   for = "/"
+   [headers.values]
+     Cache-Control = "no-cache, no-store, must-revalidate"
+
