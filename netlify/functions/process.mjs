@@ -1,11 +1,8 @@
  import { randomUUID } from 'crypto';
  import { join } from 'path';
  import { mkdirSync, readFileSync, existsSync } from 'fs';
- import { createRequire } from 'module';
+ import Busboy from 'busboy';
  import { processFromString } from '../../src/index.js';
-
- const require = createRequire(import.meta.url);
- const Busboy = require('busboy');
 
  const TMP_OUTPUT_ROOT = '/tmp/phone-csv-output';
 
