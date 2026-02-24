@@ -270,6 +270,9 @@
       <button class="tab-btn" id="compareModeDuplicates" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
         Buscar duplicados
       </button>
+      <button class="tab-btn" id="compareModeSplit" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
+        Dividir lista
+      </button>
       <button class="tab-btn" id="compareModeJson" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
         JSON → CSV
       </button>
@@ -280,13 +283,29 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex-wrap: wrap;">
         <div id="compareFirstListContainer">
           <h3 style="margin: 0 0 0.5rem; font-size: 1rem;">Primer CSV</h3>
-          <input type="file" id="compareFile1" accept=".csv" />
+          <div class="zone" id="compareZone1" style="padding: 1.5rem;">
+            <input type="file" id="compareFile1" accept=".csv" />
+            <p>Arrastra aquí un CSV o haz clic para elegir</p>
+            <p class="file-name" id="compareFile1Name"></p>
+          </div>
           <p id="compareFile1Info" style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted);"></p>
         </div>
         <div id="compareSecondListContainer">
           <h3 style="margin: 0 0 0.5rem; font-size: 1rem;">Segundo CSV</h3>
-          <input type="file" id="compareFile2" accept=".csv" />
+          <div class="zone" id="compareZone2" style="padding: 1.5rem;">
+            <input type="file" id="compareFile2" accept=".csv" />
+            <p>Arrastra aquí un CSV o haz clic para elegir</p>
+            <p class="file-name" id="compareFile2Name"></p>
+          </div>
           <p id="compareFile2Info" style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted);"></p>
+        </div>
+      </div>
+
+      <!-- Opciones extra para modo \"Dividir lista\" -->
+      <div id="splitOptions" style="display: none; margin-top: 1rem;">
+        <div class="form-group" style="max-width: 260px;">
+          <label for="splitParts">Número de partes</label>
+          <input type="number" id="splitParts" min="2" value="2" />
         </div>
       </div>
 
@@ -299,7 +318,11 @@
     <div id="compareJsonContainer" style="display: none; margin-top: 0.5rem;">
       <div class="form-group">
         <label for="jsonFileInput">Archivo JSON</label>
-        <input type="file" id="jsonFileInput" accept=".json" />
+        <div class="zone" id="jsonZone" style="padding: 1.5rem;">
+          <input type="file" id="jsonFileInput" accept=".json" />
+          <p>Arrastra aquí un JSON o haz clic para elegir</p>
+          <p class="file-name" id="jsonFileName"></p>
+        </div>
         <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
           El JSON puede ser un objeto o un array de objetos.
         </small>
@@ -1582,13 +1605,20 @@
 
       const compareFile1 = document.getElementById('compareFile1');
       const compareFile2 = document.getElementById('compareFile2');
+      const compareZone1 = document.getElementById('compareZone1');
+      const compareZone2 = document.getElementById('compareZone2');
+      const compareFile1Name = document.getElementById('compareFile1Name');
+      const compareFile2Name = document.getElementById('compareFile2Name');
       const compareFile1Info = document.getElementById('compareFile1Info');
       const compareFile2Info = document.getElementById('compareFile2Info');
       const compareModeCompare = document.getElementById('compareModeCompare');
       const compareModeDuplicates = document.getElementById('compareModeDuplicates');
+      const compareModeSplit = document.getElementById('compareModeSplit');
       const compareModeJson = document.getElementById('compareModeJson');
       const compareCsvContainer = document.getElementById('compareCsvContainer');
       const compareSecondListContainer = document.getElementById('compareSecondListContainer');
+      const splitOptions = document.getElementById('splitOptions');
+      const splitPartsInput = document.getElementById('splitParts');
       const compareJsonContainer = document.getElementById('compareJsonContainer');
       const compareActionBtn = document.getElementById('compareActionBtn');
       const compareResultsContainer = document.getElementById('compareResultsContainer');
@@ -1597,21 +1627,25 @@
       const compareTableWrapper = document.getElementById('compareTableWrapper');
       const compareDownloadBtn = document.getElementById('compareDownloadBtn');
       const jsonFileInput = document.getElementById('jsonFileInput');
+      const jsonZone = document.getElementById('jsonZone');
+      const jsonFileName = document.getElementById('jsonFileName');
       const jsonFileInfo = document.getElementById('jsonFileInfo');
       const jsonConvertBtn = document.getElementById('jsonConvertBtn');
       const jsonErrorMsg = document.getElementById('jsonErrorMsg');
 
-      let compareMode = 'compare'; // 'compare' | 'duplicates' | 'json'
+      let compareMode = 'compare'; // 'compare' | 'duplicates' | 'split' | 'json'
       let list1 = [];
       let list2 = [];
       let resultData = [];
       let jsonData = null;
+      let splitPartsData = [];
 
       function setCompareMode(mode) {
         compareMode = mode;
 
         compareModeCompare.classList.remove('active');
         compareModeDuplicates.classList.remove('active');
+        if (compareModeSplit) compareModeSplit.classList.remove('active');
         compareModeJson.classList.remove('active');
 
         if (mode === 'compare') {
@@ -1619,18 +1653,28 @@
           compareCsvContainer.style.display = 'block';
           compareSecondListContainer.style.display = 'block';
           compareJsonContainer.style.display = 'none';
+          if (splitOptions) splitOptions.style.display = 'none';
           compareActionBtn.textContent = 'Comparar Listas';
         } else if (mode === 'duplicates') {
           compareModeDuplicates.classList.add('active');
           compareCsvContainer.style.display = 'block';
           compareSecondListContainer.style.display = 'none';
           compareJsonContainer.style.display = 'none';
+          if (splitOptions) splitOptions.style.display = 'none';
           compareActionBtn.textContent = 'Buscar duplicados en CSV';
+        } else if (mode === 'split') {
+          if (compareModeSplit) compareModeSplit.classList.add('active');
+          compareCsvContainer.style.display = 'block';
+          compareSecondListContainer.style.display = 'none';
+          compareJsonContainer.style.display = 'none';
+          if (splitOptions) splitOptions.style.display = 'block';
+          compareActionBtn.textContent = 'Dividir lista';
         } else if (mode === 'json') {
           compareModeJson.classList.add('active');
           compareCsvContainer.style.display = 'none';
           compareJsonContainer.style.display = 'block';
           compareResultsContainer.style.display = 'none';
+          if (splitOptions) splitOptions.style.display = 'none';
         }
       }
 
@@ -1639,6 +1683,9 @@
       }
       if (compareModeDuplicates) {
         compareModeDuplicates.addEventListener('click', () => setCompareMode('duplicates'));
+      }
+      if (compareModeSplit) {
+        compareModeSplit.addEventListener('click', () => setCompareMode('split'));
       }
       if (compareModeJson) {
         compareModeJson.addEventListener('click', () => setCompareMode('json'));
@@ -1745,17 +1792,33 @@
         compareTableWrapper.innerHTML = html;
       }
 
+      async function handleCompareFile1(file) {
+        compareFile1Info.textContent = 'Leyendo...';
+        if (compareFile1Name) compareFile1Name.textContent = file.name || '';
+        try {
+          list1 = await parseCsvFileToObjects(file);
+          compareFile1Info.textContent = `${file.name} — ${list1.length} filas`;
+        } catch (err) {
+          compareFile1Info.textContent = 'Error al leer CSV';
+        }
+      }
+
+      async function handleCompareFile2(file) {
+        compareFile2Info.textContent = 'Leyendo...';
+        if (compareFile2Name) compareFile2Name.textContent = file.name || '';
+        try {
+          list2 = await parseCsvFileToObjects(file);
+          compareFile2Info.textContent = `${file.name} — ${list2.length} filas`;
+        } catch (err) {
+          compareFile2Info.textContent = 'Error al leer CSV';
+        }
+      }
+
       if (compareFile1) {
         compareFile1.addEventListener('change', async (e) => {
           const file = e.target.files && e.target.files[0];
           if (!file) return;
-          compareFile1Info.textContent = 'Leyendo...';
-          try {
-            list1 = await parseCsvFileToObjects(file);
-            compareFile1Info.textContent = `${file.name} — ${list1.length} filas`;
-          } catch (err) {
-            compareFile1Info.textContent = 'Error al leer CSV';
-          }
+          await handleCompareFile1(file);
         });
       }
 
@@ -1763,15 +1826,38 @@
         compareFile2.addEventListener('change', async (e) => {
           const file = e.target.files && e.target.files[0];
           if (!file) return;
-          compareFile2Info.textContent = 'Leyendo...';
-          try {
-            list2 = await parseCsvFileToObjects(file);
-            compareFile2Info.textContent = `${file.name} — ${list2.length} filas`;
-          } catch (err) {
-            compareFile2Info.textContent = 'Error al leer CSV';
-          }
+          await handleCompareFile2(file);
         });
       }
+
+      function setupDropZone(zoneEl, inputEl, onFile) {
+        if (!zoneEl || !inputEl) return;
+        zoneEl.addEventListener('click', () => inputEl.click());
+        zoneEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          zoneEl.classList.add('dragover');
+        });
+        zoneEl.addEventListener('dragleave', () => {
+          zoneEl.classList.remove('dragover');
+        });
+        zoneEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zoneEl.classList.remove('dragover');
+          const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          if (!f) return;
+          onFile(f);
+        });
+      }
+
+      setupDropZone(compareZone1, compareFile1, (file) => {
+        if (!/\.csv$/i.test(file.name)) return;
+        handleCompareFile1(file);
+      });
+
+      setupDropZone(compareZone2, compareFile2, (file) => {
+        if (!/\.csv$/i.test(file.name)) return;
+        handleCompareFile2(file);
+      });
 
       if (compareActionBtn) {
         compareActionBtn.addEventListener('click', () => {
@@ -1818,50 +1904,107 @@
             renderTable(unique);
             compareResultsContainer.style.display = 'block';
             compareDownloadBtn.disabled = !unique.length;
+          } else if (compareMode === 'split') {
+            if (!list1.length) {
+              alert('Debes cargar un CSV primero.');
+              return;
+            }
+            const partsCount = parseInt(splitPartsInput && splitPartsInput.value ? splitPartsInput.value : '2', 10);
+            if (!partsCount || partsCount < 2) {
+              alert('El número de partes debe ser al menos 2.');
+              return;
+            }
+            if (partsCount > list1.length) {
+              alert('No puedes crear más partes que registros. Reduce el número de partes.');
+              return;
+            }
+
+            const total = list1.length;
+            const baseSize = Math.floor(total / partsCount);
+            const remainder = total % partsCount;
+            const parts = [];
+            let start = 0;
+            for (let i = 0; i < partsCount; i++) {
+              const size = baseSize + (i < remainder ? 1 : 0);
+              const end = start + size;
+              parts.push(list1.slice(start, end));
+              start = end;
+            }
+
+            compareResultsTitle.textContent = 'División de lista';
+            compareSummaryText.textContent = `Total registros: ${total}. Partes generadas: ${partsCount}. Usa \"Descargar CSV de resultados\" para bajar todas las partes.`;
+            // Mostrar la primera parte como vista previa en la tabla
+            renderTable(parts[0] || []);
+            compareResultsContainer.style.display = 'block';
+            splitPartsData = parts;
+            compareDownloadBtn.disabled = parts.length === 0;
           }
         });
       }
 
       if (compareDownloadBtn) {
         compareDownloadBtn.addEventListener('click', () => {
-          if (!resultData || !resultData.length) return;
-          const csv = toCsv(resultData);
-          const filename = compareMode === 'compare' ? 'registros_unicos.csv' : 'registros_deduplicados.csv';
-          downloadCsv(csv, filename);
+          if (compareMode === 'split') {
+            if (!splitPartsData || !splitPartsData.length) return;
+            splitPartsData.forEach((part, idx) => {
+              if (!part.length) return;
+              const csv = toCsv(part);
+              const filename = `split_part_${idx + 1}_of_${splitPartsData.length}.csv`;
+              downloadCsv(csv, filename);
+            });
+          } else {
+            if (!resultData || !resultData.length) return;
+            const csv = toCsv(resultData);
+            const filename = compareMode === 'compare' ? 'registros_unicos.csv' : 'registros_deduplicados.csv';
+            downloadCsv(csv, filename);
+          }
         });
+      }
+
+      function handleJsonFile(file) {
+        if (!file) return;
+        jsonFileInfo.textContent = 'Leyendo JSON...';
+        if (jsonFileName) jsonFileName.textContent = file.name || '';
+        jsonErrorMsg.textContent = '';
+        jsonErrorMsg.className = '';
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const text = String(ev.target.result || '');
+            jsonData = JSON.parse(text);
+            const rows = Array.isArray(jsonData) ? jsonData.length : 1;
+            jsonFileInfo.textContent = `${file.name} — ${rows} registro(s)`;
+            jsonConvertBtn.disabled = false;
+          } catch (err) {
+            jsonData = null;
+            jsonFileInfo.textContent = '';
+            jsonConvertBtn.disabled = true;
+            jsonErrorMsg.textContent = 'Formato JSON inválido.';
+            jsonErrorMsg.className = 'msg error';
+          }
+        };
+        reader.onerror = () => {
+          jsonData = null;
+          jsonFileInfo.textContent = '';
+          jsonConvertBtn.disabled = true;
+          jsonErrorMsg.textContent = 'Error al leer el archivo JSON.';
+          jsonErrorMsg.className = 'msg error';
+        };
+        reader.readAsText(file);
       }
 
       if (jsonFileInput) {
         jsonFileInput.addEventListener('change', (e) => {
           const file = e.target.files && e.target.files[0];
           if (!file) return;
-          jsonFileInfo.textContent = 'Leyendo JSON...';
-          jsonErrorMsg.textContent = '';
-          jsonErrorMsg.className = '';
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            try {
-              const text = String(ev.target.result || '');
-              jsonData = JSON.parse(text);
-              const rows = Array.isArray(jsonData) ? jsonData.length : 1;
-              jsonFileInfo.textContent = `${file.name} — ${rows} registro(s)`;
-              jsonConvertBtn.disabled = false;
-            } catch (err) {
-              jsonData = null;
-              jsonFileInfo.textContent = '';
-              jsonConvertBtn.disabled = true;
-              jsonErrorMsg.textContent = 'Formato JSON inválido.';
-              jsonErrorMsg.className = 'msg error';
-            }
-          };
-          reader.onerror = () => {
-            jsonData = null;
-            jsonFileInfo.textContent = '';
-            jsonConvertBtn.disabled = true;
-            jsonErrorMsg.textContent = 'Error al leer el archivo JSON.';
-            jsonErrorMsg.className = 'msg error';
-          };
-          reader.readAsText(file);
+          handleJsonFile(file);
+        });
+      }
+
+      if (jsonZone && jsonFileInput) {
+        setupDropZone(jsonZone, jsonFileInput, (file) => {
+          if (!/\.json$/i.test(file.name)) return;
+          handleJsonFile(file);
         });
       }
 
