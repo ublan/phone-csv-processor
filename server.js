@@ -72,31 +72,51 @@ const upload = multer({
   },
 });
 
-app.post('/api/process', upload.single('file'), (req, res) => {
+// Acepta JSON ({ csvContent, clean }) o multipart (campo "file"). Devuelve files con { filename, content } para que el frontend funcione igual en local y Netlify.
+app.post('/api/process', (req, res, next) => {
+  const ct = (req.headers['content-type'] || '').toLowerCase();
+  if (ct.includes('application/json')) return next();
+  upload.single('file')(req, res, next);
+}, (req, res) => {
   try {
-    if (!req.file || !req.file.buffer) {
-      res.status(400).json({ error: 'Debe enviar un archivo CSV en el campo "file".' });
+    let csvContent;
+    let clean;
+    if (req.is('application/json')) {
+      csvContent = req.body?.csvContent ?? '';
+      clean = !!req.body?.clean;
+    } else {
+      if (!req.file?.buffer) {
+        res.status(400).json({ error: 'Debe enviar un archivo CSV en el campo "file".' });
+        return;
+      }
+      csvContent = req.file.buffer.toString('utf8');
+      clean = String(req.query.clean || '').toLowerCase() === '1' || req.query.clean === 'true';
+    }
+    if (!csvContent || typeof csvContent !== 'string') {
+      res.status(400).json({ error: 'Debe enviar el CSV (csvContent en JSON o archivo en campo "file").' });
       return;
     }
-    const csv = req.file.buffer.toString('utf8');
-    const clean = String(req.query.clean || '').toLowerCase() === '1' || req.query.clean === 'true';
     const id = randomUUID();
     const outDir = join(OUTPUT_DIR, id);
     mkdirSync(outDir, { recursive: true });
-
-    const result = processFromString(csv, { outputDir: outDir, exportCleanCsv: clean });
-
+    const result = processFromString(csvContent, { outputDir: outDir, exportCleanCsv: clean });
+    const buildFileInfo = (fileName) => {
+      const p = join(outDir, fileName);
+      if (!existsSync(p)) return null;
+      return { filename: fileName, content: readFileSync(p, 'utf8') };
+    };
+    const files = {
+      resumen: buildFileInfo('resumen_por_pais.csv'),
+      numeros: buildFileInfo('numeros_generados.csv'),
+      batch_calling: buildFileInfo('numeros_batch_calling.csv'),
+    };
+    if (clean) files.datos_limpios = buildFileInfo('datos_limpios.csv');
     res.json({
-      outputId: id, // ID para usar en importación a Retell AI
+      outputId: id,
       resumen: result.resumen,
       valid: result.valid,
       errors: result.errors,
-      files: {
-        resumen: `/api/download/${id}/resumen_por_pais.csv`,
-        numeros: `/api/download/${id}/numeros_generados.csv`,
-        batch_calling: `/api/download/${id}/numeros_batch_calling.csv`,
-        ...(clean ? { datos_limpios: `/api/download/${id}/datos_limpios.csv` } : {}),
-      },
+      files,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

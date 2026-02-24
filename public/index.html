@@ -3,386 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Procesador de CSV - Teléfonos</title>
-  <style>
-    :root {
-      --bg: #0f0f12;
-      --card: #18181c;
-      --border: #2a2a2e;
-      --text: #e4e4e7;
-      --muted: #71717a;
-      --accent: #22c55e;
-      --accent-hover: #16a34a;
-      --error: #ef4444;
-      --radius: 10px;
-      --font: 'DM Sans', system-ui, sans-serif;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem 1rem;
-    }
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-    .sub {
-      color: var(--muted);
-      margin-bottom: 2rem;
-      font-size: 0.95rem;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
-      width: 100%;
-      max-width: 480px;
-      margin-bottom: 1.5rem;
-    }
-    .card-large {
-      max-width: 1200px;
-    }
-    .zone {
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color .2s, background .2s;
-    }
-    .zone:hover, .zone.dragover { border-color: var(--accent); background: rgba(34,197,94,.06); }
-    .zone input { display: none; }
-    .zone p { margin: 0; color: var(--muted); }
-    .zone .file-name { color: var(--accent); font-weight: 500; margin-top: 0.5rem; }
-    .opt { margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-    .opt input { accent-color: var(--accent); }
-    .btn {
-      width: 100%;
-      padding: 0.75rem 1.25rem;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1rem;
-      transition: background .2s;
-    }
-    .btn:hover { background: var(--accent-hover); }
-    .btn:disabled { opacity: .6; cursor: not-allowed; }
-    .msg {
-      margin-top: 1rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius);
-      font-size: 0.9rem;
-    }
-    .msg.error { background: rgba(239,68,68,.15); color: #fca5a5; }
-    .msg.ok { background: rgba(34,197,94,.12); color: #86efac; }
-    .resumen { margin: 1rem 0 0; }
-    .resumen h3 { font-size: 1rem; margin: 0 0 0.75rem; }
-    .resumen ul { list-style: none; padding: 0; margin: 0; }
-    .resumen li { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid var(--border); }
-    .resumen li:last-child { border-bottom: none; }
-    .links { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .links a {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      background: var(--border);
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      transition: background .2s;
-    }
-    .links a:hover { background: #3f3f46; }
-    .btn-secondary {
-      background: var(--border);
-      color: var(--text);
-    }
-    .btn-secondary:hover { background: #3f3f46; }
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,.8);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .modal.active { display: flex; }
-    .modal-content {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      width: 100%;
-      max-width: 500px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-    .modal-header h2 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-    .close-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-    }
-    .close-btn:hover { background: var(--border); color: var(--text); }
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text);
-    }
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 0.75rem;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 0.95rem;
-      font-family: inherit;
-    }
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .form-group input[type="password"] {
-      font-family: monospace;
-    }
-    .progress {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: var(--bg);
-      border-radius: 6px;
-      display: none;
-    }
-    .progress.active { display: block; }
-    .progress-bar {
-      width: 100%;
-      height: 8px;
-      background: var(--border);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 0.5rem;
-    }
-    .progress-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.3s;
-      width: 0%;
-    }
-    .progress-text {
-      font-size: 0.85rem;
-      color: var(--muted);
-      text-align: center;
-    }
-    .tab-btn.active {
-      background: var(--accent) !important;
-      color: #fff !important;
-      border-color: var(--accent) !important;
-    }
-    .tab-btn:hover:not(.active) {
-      background: var(--border) !important;
-    }
-    textarea {
-      font-family: monospace;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 0;
-    }
-    table th,
-    table td {
-      padding: 1rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.95rem;
-    }
-    table th {
-      background: var(--bg);
-      font-weight: 600;
-      color: var(--text);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    table tbody tr {
-      transition: background .2s;
-    }
-    table tbody tr:hover {
-      background: rgba(34,197,94,.08);
-    }
-    table td:first-child {
-      font-weight: 500;
-      font-size: 1rem;
-    }
-    .btn-small {
-      padding: 0.5rem 1rem;
-      font-size: 0.9rem;
-      background: var(--error);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all .2s;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .btn-small:hover {
-      background: #dc2626;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(239,68,68,.3);
-    }
-    .btn-small:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .phone-number-cell {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      justify-content: space-between;
-    }
-    .phone-number-cell strong {
-      flex: 1;
-    }
-    /* Estilos para el modal de confirmación */
-    .confirm-modal-content {
-      max-width: 450px;
-    }
-    .confirm-modal-body {
-      margin-bottom: 1.5rem;
-    }
-    .confirm-modal-body p {
-      margin: 0;
-      font-size: 1rem;
-      line-height: 1.6;
-    }
-    .confirm-modal-body .phone-number {
-      color: var(--accent);
-      font-weight: 600;
-      font-size: 1.1rem;
-    }
-    .confirm-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-      padding: 0.75rem;
-      background: rgba(34,197,94,.08);
-      border-radius: 6px;
-      border: 1px solid rgba(34,197,94,.2);
-    }
-    .confirm-checkbox input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--accent);
-    }
-    .confirm-checkbox label {
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: var(--text);
-      user-select: none;
-    }
-    .confirm-modal-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
-    }
-    .btn-confirm {
-      padding: 0.75rem 1.5rem;
-      background: var(--error);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .2s;
-    }
-    .btn-confirm:hover {
-      background: #dc2626;
-    }
-    .btn-cancel {
-      padding: 0.75rem 1.5rem;
-      background: var(--border);
-      color: var(--text);
-      border: none;
-      border-radius: var(--radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .2s;
-    }
-    .btn-cancel:hover {
-      background: #3f3f46;
-    }
-  </style>
+  <title>Micro Tools</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Procesador de CSV — Teléfonos</h1>
-  <p class="sub">Valida, normaliza y genera resumen y números por país</p>
+  <aside class="sidebar">
+    <div class="sidebar-brand">Micro Tools</div>
+    <p class="sidebar-desc">Herramientas de CSV, teléfonos y Retell AI</p>
+    <nav class="sidebar-nav">
+      <button type="button" class="tab-btn active" id="tabProcess">Procesar CSV</button>
+      <button type="button" class="tab-btn" id="tabImport">Importar a Retell AI</button>
+      <button type="button" class="tab-btn" id="tabBatchCall">Batch Calling</button>
+      <button type="button" class="tab-btn" id="tabManage">Gestionar Números</button>
+      <button type="button" class="tab-btn" id="tabCompare">Comparar Listas / JSON</button>
+      <a href="https://url-redirect-post-ge-rwgf.bolt.host" target="_blank" rel="noopener noreferrer" class="sidebar-link">ProxyLink</a>
+    </nav>
+  </aside>
 
-  <!-- Tabs para navegar entre secciones -->
-  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; max-width: 720px; width: 100%; flex-wrap: wrap;">
-    <button class="tab-btn active" id="tabProcess" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
-      Procesar CSV
-    </button>
-    <button class="tab-btn" id="tabImport" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
-      Importar a Retell AI
-    </button>
-    <button class="tab-btn" id="tabBatchCall" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
-      Batch Calling
-    </button>
-    <button class="tab-btn" id="tabManage" style="flex: 1; min-width: 150px; padding: 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-weight: 500;">
-      Gestionar Números
-    </button>
-  </div>
-
+  <main class="main-content">
   <!-- Sección de Procesar CSV -->
-  <div class="card" id="processSection">
+  <div class="card card-large" id="processSection">
+    <h2 class="section-title">Procesar CSV</h2>
+    <p class="section-desc">Sube un archivo CSV para validar números, normalizar por país y obtener resumen, números generados y archivos listos para batch calling.</p>
     <div class="zone" id="zone">
       <input type="file" id="file" accept=".csv" />
       <p>Arrastra aquí un CSV o haz clic para elegir</p>
@@ -405,72 +47,85 @@
   </div>
 
   <!-- Sección de Importar a Retell AI -->
-  <div class="card" id="importSection" style="display: none;">
-    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem;">Importar Números a Retell AI</h2>
-    
+  <div class="card card-large" id="importSection" style="display: none;">
+    <h2 class="section-title">Importar Números a Retell AI</h2>
+    <p class="section-desc">Elige la fuente de números (CSV, manual o procesados) y configura credenciales y parámetros de Retell AI para importar.</p>
+
     <form id="directImportForm">
-      <div class="form-group">
-        <label>Fuente de números *</label>
-        <select id="directNumberSource" required>
-          <option value="csv">Subir CSV con números</option>
-          <option value="manual">Ingresar números manualmente</option>
-          <option value="processed">Usar números procesados</option>
-        </select>
+      <div class="form-block">
+        <div class="form-block-title">Fuente de números</div>
+        <div class="form-group">
+          <label>Fuente de números *</label>
+          <select id="directNumberSource" required>
+            <option value="csv">Subir CSV con números</option>
+            <option value="manual">Ingresar números manualmente</option>
+            <option value="processed">Usar números procesados</option>
+          </select>
+        </div>
+        <div class="form-group" id="directCsvUploadGroup">
+          <label for="directCsvFile">Archivo CSV con números *</label>
+          <input type="file" id="directCsvFile" accept=".csv" />
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Formato: una columna con números en formato internacional (+57...)
+          </small>
+        </div>
+        <div class="form-group" id="directManualNumbersGroup" style="display: none;">
+          <label for="directManualNumbers">Números telefónicos (uno por línea o separados por comas) *</label>
+          <textarea id="directManualNumbers" rows="8" placeholder="5493415960906, 5492232105153, 5492616836030&#10;o uno por línea:&#10;+573146816250&#10;+34600089523" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: monospace; font-size: 0.9rem; resize: vertical;"></textarea>
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Puedes ingresar números separados por comas o uno por línea. El sistema agregará el "+" automáticamente si falta.
+          </small>
+        </div>
+        <div class="form-group" id="directProcessedGroup" style="display: none;">
+          <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">
+            Primero procesa un CSV en la pestaña "Procesar CSV" para usar esta opción.
+          </p>
+        </div>
       </div>
-      <div class="form-group" id="directCsvUploadGroup">
-        <label for="directCsvFile">Archivo CSV con números *</label>
-        <input type="file" id="directCsvFile" accept=".csv" />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Formato: una columna con números en formato internacional (+57...)
-        </small>
+
+      <div class="form-block">
+        <div class="form-block-title">Retell AI — Credenciales y conexión</div>
+        <div class="form-group">
+          <label for="directApiKey">API Key de Retell AI *</label>
+          <input type="password" id="directApiKey" placeholder="Ingresa tu API Key" required />
+        </div>
+        <div class="form-group">
+          <label for="directTerminationUri">Termination URI *</label>
+          <input type="text" id="directTerminationUri" placeholder="ia.conecta-bit.com" value="ia.conecta-bit.com" required />
+        </div>
+        <div class="form-group">
+          <label for="directOutboundTransport">Outbound Transport *</label>
+          <select id="directOutboundTransport" required>
+            <option value="UDP" selected>UDP</option>
+            <option value="TCP">TCP</option>
+            <option value="TLS">TLS</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="directOutboundAgentId">Outbound Agent ID *</label>
+          <input type="text" id="directOutboundAgentId" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" required />
+        </div>
       </div>
-      <div class="form-group" id="directManualNumbersGroup" style="display: none;">
-        <label for="directManualNumbers">Números telefónicos (uno por línea o separados por comas) *</label>
-        <textarea id="directManualNumbers" rows="8" placeholder="5493415960906, 5492232105153, 5492616836030&#10;o uno por línea:&#10;+573146816250&#10;+34600089523" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: monospace; font-size: 0.9rem; resize: vertical;"></textarea>
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Puedes ingresar números separados por comas o uno por línea. El sistema agregará el "+" automáticamente si falta.
-        </small>
+
+      <div class="form-block">
+        <div class="form-block-title">Opcionales — SIP y nickname</div>
+        <div class="form-group">
+          <label for="directSipTrunkUsername">SIP Trunk Username (opcional)</label>
+          <input type="text" id="directSipTrunkUsername" placeholder="Enter SIP Trunk User Name" />
+        </div>
+        <div class="form-group">
+          <label for="directSipTrunkPassword">SIP Trunk Password (opcional)</label>
+          <input type="password" id="directSipTrunkPassword" placeholder="Enter SIP Trunk Password" />
+        </div>
+        <div class="form-group">
+          <label for="directNickname">Nickname (opcional)</label>
+          <input type="text" id="directNickname" placeholder="Ej: Brasil 1 (se numerará automáticamente: Brasil 2, Brasil 3...)" />
+          <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+            Si ingresas un número (ej: "Brasil 5"), la numeración comenzará desde ese número. Si no ingresas número, comenzará desde 1.
+          </small>
+        </div>
       </div>
-      <div class="form-group" id="directProcessedGroup" style="display: none;">
-        <p style="color: var(--muted); font-size: 0.9rem; margin: 0;">
-          Primero procesa un CSV en la pestaña "Procesar CSV" para usar esta opción.
-        </p>
-      </div>
-      <div class="form-group">
-        <label for="directApiKey">API Key de Retell AI *</label>
-        <input type="password" id="directApiKey" placeholder="Ingresa tu API Key" required />
-      </div>
-      <div class="form-group">
-        <label for="directTerminationUri">Termination URI *</label>
-        <input type="text" id="directTerminationUri" placeholder="ia.conecta-bit.com" value="ia.conecta-bit.com" required />
-      </div>
-      <div class="form-group">
-        <label for="directOutboundTransport">Outbound Transport *</label>
-        <select id="directOutboundTransport" required>
-          <option value="UDP" selected>UDP</option>
-          <option value="TCP">TCP</option>
-          <option value="TLS">TLS</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="directSipTrunkUsername">SIP Trunk Username (opcional)</label>
-        <input type="text" id="directSipTrunkUsername" placeholder="Enter SIP Trunk User Name" />
-      </div>
-      <div class="form-group">
-        <label for="directSipTrunkPassword">SIP Trunk Password (opcional)</label>
-        <input type="password" id="directSipTrunkPassword" placeholder="Enter SIP Trunk Password" />
-      </div>
-      <div class="form-group">
-        <label for="directOutboundAgentId">Outbound Agent ID *</label>
-        <input type="text" id="directOutboundAgentId" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" required />
-      </div>
-      <div class="form-group">
-        <label for="directNickname">Nickname (opcional)</label>
-        <input type="text" id="directNickname" placeholder="Ej: Brasil 1 (se numerará automáticamente: Brasil 2, Brasil 3...)" />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Si ingresas un número (ej: "Brasil 5"), la numeración comenzará desde ese número. Si no ingresas número, comenzará desde 1.
-        </small>
-      </div>
+
       <div class="progress" id="directProgress">
         <div class="progress-bar">
           <div class="progress-fill" id="directProgressFill"></div>
@@ -484,8 +139,9 @@
 
   <!-- Sección de Batch Calling -->
   <div class="card card-large" id="batchCallSection" style="display: none;">
-    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">Create Batch Call</h2>
-    
+    <h2 class="section-title">Batch Calling</h2>
+    <p class="section-desc">Carga un CSV de contactos con columna phone_number, configura agente y opciones, y crea los batches en Retell AI agrupados por prefijo.</p>
+
     <form id="batchCallForm">
       <!-- Paso 1: Cargar CSV -->
       <div class="form-group">
@@ -565,8 +221,9 @@
 
   <!-- Sección de Gestionar Números -->
   <div class="card card-large" id="manageSection" style="display: none;">
-    <h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">Gestionar Números en Retell AI</h2>
-    
+    <h2 class="section-title">Gestionar Números en Retell AI</h2>
+    <p class="section-desc">Lista los números importados en tu cuenta Retell AI, busca por número o nickname y elimina los que ya no necesites.</p>
+
     <div class="form-group" style="max-width: 800px;">
       <label for="manageApiKey">API Key de Retell AI *</label>
       <div style="display: flex; gap: 0.75rem; align-items: center;">
@@ -599,6 +256,77 @@
       <div id="manageMsg" style="margin-top: 1rem;"></div>
     </div>
   </div>
+
+  <!-- Sección de Comparar Listas / JSON -->
+  <div class="card card-large" id="compareSection" style="display: none;">
+    <h2 class="section-title">Comparar Listas / JSON</h2>
+    <p class="section-desc">Compara dos CSV por número, busca duplicados en uno o convierte JSON a CSV. Todo en el navegador, sin enviar datos al servidor.</p>
+
+    <!-- Selector de modo -->
+    <div style="display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-bottom: var(--space-md);">
+      <button class="tab-btn" id="compareModeCompare" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
+        Comparar dos CSV
+      </button>
+      <button class="tab-btn" id="compareModeDuplicates" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
+        Buscar duplicados
+      </button>
+      <button class="tab-btn" id="compareModeJson" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
+        JSON → CSV
+      </button>
+    </div>
+
+    <!-- Contenido CSV (comparar / duplicados) -->
+    <div id="compareCsvContainer">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex-wrap: wrap;">
+        <div id="compareFirstListContainer">
+          <h3 style="margin: 0 0 0.5rem; font-size: 1rem;">Primer CSV</h3>
+          <input type="file" id="compareFile1" accept=".csv" />
+          <p id="compareFile1Info" style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted);"></p>
+        </div>
+        <div id="compareSecondListContainer">
+          <h3 style="margin: 0 0 0.5rem; font-size: 1rem;">Segundo CSV</h3>
+          <input type="file" id="compareFile2" accept=".csv" />
+          <p id="compareFile2Info" style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted);"></p>
+        </div>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <button class="btn" id="compareActionBtn">Comparar Listas</button>
+      </div>
+    </div>
+
+    <!-- Contenido JSON -->
+    <div id="compareJsonContainer" style="display: none; margin-top: 0.5rem;">
+      <div class="form-group">
+        <label for="jsonFileInput">Archivo JSON</label>
+        <input type="file" id="jsonFileInput" accept=".json" />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          El JSON puede ser un objeto o un array de objetos.
+        </small>
+        <p id="jsonFileInfo" style="margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted);"></p>
+      </div>
+      <button class="btn" id="jsonConvertBtn" disabled>Convertir a CSV y descargar</button>
+      <div id="jsonErrorMsg" style="margin-top: 0.75rem;"></div>
+    </div>
+
+    <!-- Resultados -->
+    <div id="compareResultsContainer" style="margin-top: 1.5rem; display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h3 id="compareResultsTitle" style="margin: 0; font-size: 1rem;">Resultados</h3>
+        <button class="btn btn-secondary" id="compareDownloadBtn" style="width: auto; padding-inline: 1rem;" disabled>
+          Descargar CSV de resultados
+        </button>
+      </div>
+      <p id="compareSummaryText" style="margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--muted);"></p>
+      <div id="compareTableWrapper" style="overflow-x: auto; background: var(--bg); border-radius: var(--radius); padding: 1rem;">
+        <div id="compareTablePlaceholder" style="color: var(--muted); text-align: center; padding: 1rem; font-size: 0.9rem;">
+          No hay resultados todavía.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </main>
 
   <!-- Modal de Confirmación para Eliminar -->
   <div class="modal" id="deleteConfirmModal">
@@ -1049,6 +777,8 @@
     const importSection = document.getElementById('importSection');
     const tabProcess = document.getElementById('tabProcess');
     const tabImport = document.getElementById('tabImport');
+    const compareSection = document.getElementById('compareSection');
+    const tabCompare = document.getElementById('tabCompare');
     const directImportForm = document.getElementById('directImportForm');
     const directNumberSource = document.getElementById('directNumberSource');
     const directCsvUploadGroup = document.getElementById('directCsvUploadGroup');
@@ -1068,10 +798,12 @@
       importSection.style.display = 'none';
       batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
+      compareSection.style.display = 'none';
       tabProcess.classList.add('active');
       tabImport.classList.remove('active');
       tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
+      tabCompare.classList.remove('active');
     });
 
     tabImport.addEventListener('click', () => {
@@ -1079,10 +811,12 @@
       importSection.style.display = 'block';
       batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
+      compareSection.style.display = 'none';
       tabProcess.classList.remove('active');
       tabImport.classList.add('active');
       tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
+      tabCompare.classList.remove('active');
     });
 
     tabManage.addEventListener('click', () => {
@@ -1090,11 +824,28 @@
       importSection.style.display = 'none';
       batchCallSection.style.display = 'none';
       manageSection.style.display = 'block';
+      compareSection.style.display = 'none';
       tabProcess.classList.remove('active');
       tabImport.classList.remove('active');
       tabBatchCall.classList.remove('active');
       tabManage.classList.add('active');
+      tabCompare.classList.remove('active');
     });
+
+    if (tabCompare && compareSection) {
+      tabCompare.addEventListener('click', () => {
+        processSection.style.display = 'none';
+        importSection.style.display = 'none';
+        batchCallSection.style.display = 'none';
+        manageSection.style.display = 'none';
+        compareSection.style.display = 'block';
+        tabProcess.classList.remove('active');
+        tabImport.classList.remove('active');
+        tabBatchCall.classList.remove('active');
+        tabManage.classList.remove('active');
+        tabCompare.classList.add('active');
+      });
+    }
 
     // Manejar cambio de fuente de números en importación directa
     directNumberSource.addEventListener('change', (e) => {
@@ -1301,10 +1052,12 @@
       processSection.style.display = 'none';
       importSection.style.display = 'none';
       manageSection.style.display = 'none';
+      compareSection.style.display = 'none';
       batchCallSection.style.display = 'block';
       tabProcess.classList.remove('active');
       tabImport.classList.remove('active');
       tabManage.classList.remove('active');
+      tabCompare.classList.remove('active');
       tabBatchCall.classList.add('active');
     });
 
@@ -1822,6 +1575,312 @@
         }
       }
     };
+
+    // ===== SECCIÓN DE COMPARAR LISTAS / JSON (CLIENTE) =====
+    (function setupCompareSection() {
+      if (!compareSection) return;
+
+      const compareFile1 = document.getElementById('compareFile1');
+      const compareFile2 = document.getElementById('compareFile2');
+      const compareFile1Info = document.getElementById('compareFile1Info');
+      const compareFile2Info = document.getElementById('compareFile2Info');
+      const compareModeCompare = document.getElementById('compareModeCompare');
+      const compareModeDuplicates = document.getElementById('compareModeDuplicates');
+      const compareModeJson = document.getElementById('compareModeJson');
+      const compareCsvContainer = document.getElementById('compareCsvContainer');
+      const compareSecondListContainer = document.getElementById('compareSecondListContainer');
+      const compareJsonContainer = document.getElementById('compareJsonContainer');
+      const compareActionBtn = document.getElementById('compareActionBtn');
+      const compareResultsContainer = document.getElementById('compareResultsContainer');
+      const compareResultsTitle = document.getElementById('compareResultsTitle');
+      const compareSummaryText = document.getElementById('compareSummaryText');
+      const compareTableWrapper = document.getElementById('compareTableWrapper');
+      const compareDownloadBtn = document.getElementById('compareDownloadBtn');
+      const jsonFileInput = document.getElementById('jsonFileInput');
+      const jsonFileInfo = document.getElementById('jsonFileInfo');
+      const jsonConvertBtn = document.getElementById('jsonConvertBtn');
+      const jsonErrorMsg = document.getElementById('jsonErrorMsg');
+
+      let compareMode = 'compare'; // 'compare' | 'duplicates' | 'json'
+      let list1 = [];
+      let list2 = [];
+      let resultData = [];
+      let jsonData = null;
+
+      function setCompareMode(mode) {
+        compareMode = mode;
+
+        compareModeCompare.classList.remove('active');
+        compareModeDuplicates.classList.remove('active');
+        compareModeJson.classList.remove('active');
+
+        if (mode === 'compare') {
+          compareModeCompare.classList.add('active');
+          compareCsvContainer.style.display = 'block';
+          compareSecondListContainer.style.display = 'block';
+          compareJsonContainer.style.display = 'none';
+          compareActionBtn.textContent = 'Comparar Listas';
+        } else if (mode === 'duplicates') {
+          compareModeDuplicates.classList.add('active');
+          compareCsvContainer.style.display = 'block';
+          compareSecondListContainer.style.display = 'none';
+          compareJsonContainer.style.display = 'none';
+          compareActionBtn.textContent = 'Buscar duplicados en CSV';
+        } else if (mode === 'json') {
+          compareModeJson.classList.add('active');
+          compareCsvContainer.style.display = 'none';
+          compareJsonContainer.style.display = 'block';
+          compareResultsContainer.style.display = 'none';
+        }
+      }
+
+      if (compareModeCompare) {
+        compareModeCompare.addEventListener('click', () => setCompareMode('compare'));
+      }
+      if (compareModeDuplicates) {
+        compareModeDuplicates.addEventListener('click', () => setCompareMode('duplicates'));
+      }
+      if (compareModeJson) {
+        compareModeJson.addEventListener('click', () => setCompareMode('json'));
+      }
+
+      setCompareMode('compare');
+
+      function parseCsvFileToObjects(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const text = String(event.target.result || '');
+              const lines = text.split(/\r?\n/).filter((l) => l.trim());
+              if (!lines.length) {
+                resolve([]);
+                return;
+              }
+              const header = lines[0].split(',').map((h) => h.trim());
+              const rows = [];
+              for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if (!cols.some((c) => c.trim())) continue;
+                const obj = {};
+                header.forEach((h, idx) => {
+                  obj[h] = (cols[idx] || '').trim();
+                });
+                rows.push(obj);
+              }
+              resolve(rows);
+            } catch (err) {
+              reject(err);
+            }
+          };
+          reader.onerror = () => reject(new Error('Error leyendo archivo'));
+          reader.readAsText(file);
+        });
+      }
+
+      function getPhoneKey(obj) {
+        const keys = Object.keys(obj || {});
+        const match = keys.find((k) =>
+          /^phone[\s_]?number$/i.test(k) ||
+          /^telefono$/i.test(k) ||
+          /^tel$/i.test(k) ||
+          /^phone$/i.test(k)
+        );
+        return match || keys[0] || null;
+      }
+
+      function toCsv(objects) {
+        if (!objects || !objects.length) return '';
+        const allKeys = new Set();
+        objects.forEach((o) => Object.keys(o).forEach((k) => allKeys.add(k)));
+        const headers = Array.from(allKeys);
+        const rows = [headers.join(',')];
+        for (const o of objects) {
+          const cols = headers.map((h) => {
+            let v = o[h] != null ? String(o[h]) : '';
+            if (v.includes('"') || v.includes(',') || v.includes('\n')) {
+              v = '"' + v.replace(/"/g, '""') + '"';
+            }
+            return v;
+          });
+          rows.push(cols.join(','));
+        }
+        return rows.join('\n');
+      }
+
+      function downloadCsv(content, filename) {
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function renderTable(data) {
+        if (!data || !data.length) {
+          compareTableWrapper.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 1rem;">No hay filas para mostrar.</p>';
+          return;
+        }
+        const allKeys = new Set();
+        data.forEach((o) => Object.keys(o).forEach((k) => allKeys.add(k)));
+        const headers = Array.from(allKeys);
+        let html = '<table><thead><tr>';
+        headers.forEach((h) => {
+          html += `<th>${h}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        data.forEach((row) => {
+          html += '<tr>';
+          headers.forEach((h) => {
+            const v = row[h] != null ? String(row[h]) : '';
+            html += `<td>${v}</td>`;
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        compareTableWrapper.innerHTML = html;
+      }
+
+      if (compareFile1) {
+        compareFile1.addEventListener('change', async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          compareFile1Info.textContent = 'Leyendo...';
+          try {
+            list1 = await parseCsvFileToObjects(file);
+            compareFile1Info.textContent = `${file.name} — ${list1.length} filas`;
+          } catch (err) {
+            compareFile1Info.textContent = 'Error al leer CSV';
+          }
+        });
+      }
+
+      if (compareFile2) {
+        compareFile2.addEventListener('change', async (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          compareFile2Info.textContent = 'Leyendo...';
+          try {
+            list2 = await parseCsvFileToObjects(file);
+            compareFile2Info.textContent = `${file.name} — ${list2.length} filas`;
+          } catch (err) {
+            compareFile2Info.textContent = 'Error al leer CSV';
+          }
+        });
+      }
+
+      if (compareActionBtn) {
+        compareActionBtn.addEventListener('click', () => {
+          if (compareMode === 'compare') {
+            if (!list1.length || !list2.length) {
+              alert('Debes cargar dos CSV primero.');
+              return;
+            }
+            const phoneKey1 = getPhoneKey(list1[0]);
+            const phoneKey2 = getPhoneKey(list2[0]);
+            const set2 = new Set(list2.map((r) => String(r[phoneKey2] || '').trim()).filter(Boolean));
+            const unique = list1.filter((r) => {
+              const v = String(r[phoneKey1] || '').trim();
+              return v && !set2.has(v);
+            });
+            resultData = unique;
+            compareResultsTitle.textContent = 'Registros únicos del primer CSV (no presentes en el segundo)';
+            compareSummaryText.textContent = `Primer CSV: ${list1.length} filas. Segundo CSV: ${list2.length} filas. Únicos en el primero: ${unique.length}.`;
+            renderTable(unique);
+            compareResultsContainer.style.display = 'block';
+            compareDownloadBtn.disabled = !unique.length;
+          } else if (compareMode === 'duplicates') {
+            if (!list1.length) {
+              alert('Debes cargar un CSV primero.');
+              return;
+            }
+            const phoneKey = getPhoneKey(list1[0]);
+            const seen = new Set();
+            const unique = [];
+            const duplicates = [];
+            list1.forEach((r) => {
+              const v = String(r[phoneKey] || '').trim();
+              if (!v) return;
+              if (seen.has(v)) {
+                duplicates.push(r);
+              } else {
+                seen.add(v);
+                unique.push(r);
+              }
+            });
+            resultData = unique;
+            compareResultsTitle.textContent = 'Registros deduplicados por número';
+            compareSummaryText.textContent = `Filas originales: ${list1.length}. Únicos: ${unique.length}. Duplicados: ${duplicates.length}.`;
+            renderTable(unique);
+            compareResultsContainer.style.display = 'block';
+            compareDownloadBtn.disabled = !unique.length;
+          }
+        });
+      }
+
+      if (compareDownloadBtn) {
+        compareDownloadBtn.addEventListener('click', () => {
+          if (!resultData || !resultData.length) return;
+          const csv = toCsv(resultData);
+          const filename = compareMode === 'compare' ? 'registros_unicos.csv' : 'registros_deduplicados.csv';
+          downloadCsv(csv, filename);
+        });
+      }
+
+      if (jsonFileInput) {
+        jsonFileInput.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          jsonFileInfo.textContent = 'Leyendo JSON...';
+          jsonErrorMsg.textContent = '';
+          jsonErrorMsg.className = '';
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            try {
+              const text = String(ev.target.result || '');
+              jsonData = JSON.parse(text);
+              const rows = Array.isArray(jsonData) ? jsonData.length : 1;
+              jsonFileInfo.textContent = `${file.name} — ${rows} registro(s)`;
+              jsonConvertBtn.disabled = false;
+            } catch (err) {
+              jsonData = null;
+              jsonFileInfo.textContent = '';
+              jsonConvertBtn.disabled = true;
+              jsonErrorMsg.textContent = 'Formato JSON inválido.';
+              jsonErrorMsg.className = 'msg error';
+            }
+          };
+          reader.onerror = () => {
+            jsonData = null;
+            jsonFileInfo.textContent = '';
+            jsonConvertBtn.disabled = true;
+            jsonErrorMsg.textContent = 'Error al leer el archivo JSON.';
+            jsonErrorMsg.className = 'msg error';
+          };
+          reader.readAsText(file);
+        });
+      }
+
+      if (jsonConvertBtn) {
+        jsonConvertBtn.addEventListener('click', () => {
+          if (!jsonData) return;
+          try {
+            const arr = Array.isArray(jsonData) ? jsonData : [jsonData];
+            const csv = toCsv(arr);
+            downloadCsv(csv, 'convertido_desde_json.csv');
+            jsonErrorMsg.textContent = 'Conversión completada. Se descargó el CSV.';
+            jsonErrorMsg.className = 'msg ok';
+          } catch (err) {
+            jsonErrorMsg.textContent = 'Error al convertir JSON a CSV.';
+            jsonErrorMsg.className = 'msg error';
+          }
+        });
+      }
+    })();
   </script>
 </body>
 </html>
