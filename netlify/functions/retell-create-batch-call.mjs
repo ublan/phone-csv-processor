@@ -27,7 +27,6 @@ function parseMultipart(event) {
     let reserved_concurrency = '';
     let generatedNumbersJson = '';
     let from_number = '';
-    let from_number = '';
 
     busboy.on('file', (name, file) => {
       if (name !== 'csvFile') {
