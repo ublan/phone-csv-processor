@@ -173,6 +173,16 @@
       </div>
 
       <div class="form-group">
+        <label for="batchCallFromNumber">Número origen (from_number)</label>
+        <select id="batchCallFromNumber">
+          <option value="">Selecciona un número disponible</option>
+        </select>
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Se llena automáticamente usando tu API Key con los números disponibles en tu cuenta Retell.
+        </small>
+      </div>
+
+      <div class="form-group">
         <label for="batchCallBatchName">Batch Name (opcional)</label>
         <input type="text" id="batchCallBatchName" placeholder="Auto-generate based on country" />
         <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
@@ -1066,6 +1076,7 @@
     const batchCallCancelBtn = document.getElementById('batchCallCancelBtn');
     const batchCallMsg = document.getElementById('batchCallMsg');
     const batchCallApiKeyInput = document.getElementById('batchCallApiKey');
+    const batchCallFromNumberSelect = document.getElementById('batchCallFromNumber');
 
     let batchCallCsvData = null;
     let batchCallGeneratedNumbers = null;
@@ -1161,6 +1172,19 @@
               if (batchCallGeneratedNumbers.length > 0) {
                 batchCallMsg.textContent = `${batchCallGeneratedNumbers.length} números telefónicos disponibles`;
                 batchCallMsg.className = 'msg ok';
+                if (batchCallFromNumberSelect) {
+                  batchCallFromNumberSelect.innerHTML = '<option value=\"\">Selecciona un número disponible</option>';
+                  batchCallGeneratedNumbers.forEach((phone) => {
+                    const numRaw = phone.phone_number || phone.from_number || phone.number || phone;
+                    if (!numRaw) return;
+                    const num = String(numRaw).startsWith('+') ? String(numRaw) : `+${numRaw}`;
+                    const label = phone.nickname ? `${num} — ${phone.nickname}` : num;
+                    const opt = document.createElement('option');
+                    opt.value = num;
+                    opt.textContent = label;
+                    batchCallFromNumberSelect.appendChild(opt);
+                  });
+                }
               }
             }
           } catch (error) {
@@ -1195,6 +1219,9 @@
       if (reservedConcurrency) body.reserved_concurrency = reservedConcurrency;
       if (batchCallGeneratedNumbers && batchCallGeneratedNumbers.length > 0) {
         body.generatedNumbers = batchCallGeneratedNumbers;
+      }
+      if (batchCallFromNumberSelect && batchCallFromNumberSelect.value) {
+        body.from_number = batchCallFromNumberSelect.value;
       }
 
       batchCallSubmitBtn.disabled = true;

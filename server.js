@@ -626,6 +626,7 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
       start_time,
       reserved_concurrency,
       generatedNumbers: generatedNumbersJson,
+      from_number,
     } = req.body;
 
     if (!apiKey) {
@@ -655,7 +656,66 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
 
     const contacts = parseResult.contacts;
 
-    // Obtener números generados disponibles
+    // Si el cliente envía from_number explícito, crear un solo batch con ese número
+    if (from_number) {
+      const normalizedFrom = from_number.startsWith('+') ? from_number : `+${from_number}`;
+
+      const tasks = contacts.map(contact => {
+        const task = {
+          phone_number: contact.phone_number,
+          variables: contact.variables,
+        };
+        if (agent_id) task.override_agent_id = agent_id;
+        return task;
+      });
+
+      let batchName = batch_name || `Batch - ${normalizedFrom}`;
+
+      let triggerTimestamp;
+      if (start_time) {
+        const date = new Date(start_time);
+        if (!isNaN(date.getTime())) {
+          triggerTimestamp = date.getTime();
+        }
+      }
+
+      const batchResult = await createBatchCall({
+        apiKey,
+        from_number: normalizedFrom,
+        tasks,
+        name: batchName,
+        trigger_timestamp: triggerTimestamp,
+        reserved_concurrency: reserved_concurrency ? parseInt(reserved_concurrency, 10) : undefined,
+      });
+
+      if (!batchResult.success) {
+        res.status(batchResult.statusCode || 400).json({
+          success: false,
+          error: batchResult.error || 'Error al crear el batch call',
+          data: batchResult.data,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        total_contacts: contacts.length,
+        batches_created: 1,
+        batches_failed: 0,
+        results: [{
+          success: true,
+          batch_call_id: batchResult.batch_call_id,
+          from_number: normalizedFrom,
+          nickname: null,
+          total_calls: tasks.length,
+          batch_name: batchName,
+          data: batchResult.data,
+        }],
+      });
+      return;
+    }
+
+    // Si no se envía from_number, usar lógica anterior agrupando por prefijo
     let generatedNumbers = [];
     if (generatedNumbersJson) {
       try {
@@ -663,14 +723,12 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
           ? JSON.parse(generatedNumbersJson) 
           : generatedNumbersJson;
       } catch (e) {
-        // Si falla el parse, intentar obtener desde Retell AI
         const listResult = await listPhoneNumbers({ apiKey });
         if (listResult.success) {
           generatedNumbers = listResult.data || [];
         }
       }
     } else {
-      // Si no se proporcionaron, obtener desde Retell AI
       const listResult = await listPhoneNumbers({ apiKey });
       if (listResult.success) {
         generatedNumbers = listResult.data || [];
@@ -682,13 +740,11 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
       return;
     }
 
-    // Normalizar números generados
     const normalizedGeneratedNumbers = generatedNumbers.map(gn => ({
       phone_number: gn.phone_number || gn.numero_generado || gn,
       nickname: gn.nickname || gn.pais || null,
     }));
 
-    // Agrupar contactos por prefijo
     const groups = groupContactsByPrefix(contacts, normalizedGeneratedNumbers);
 
     if (groups.length === 0) {
@@ -698,31 +754,20 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
       return;
     }
 
-    // Crear batches
     const results = [];
     const errors = [];
 
     for (const group of groups) {
       try {
-        // Preparar tasks para el batch
-        // Nota: El agente se asocia al from_number, no al batch call directamente
-        // Si se necesita override por task, se puede agregar override_agent_id en cada task
         const tasks = group.contacts.map(contact => {
           const task = {
-            phone_number: contact.phone_number, // Se convertirá a to_number en createBatchCall
-            variables: contact.variables, // Se convertirá a retell_llm_dynamic_variables
+            phone_number: contact.phone_number,
+            variables: contact.variables,
           };
-          
-          // Si se proporciona agent_id, agregarlo como override (opcional)
-          // El agente normalmente ya está asociado al from_number en Retell AI
-          if (agent_id) {
-            task.override_agent_id = agent_id;
-          }
-          
+          if (agent_id) task.override_agent_id = agent_id;
           return task;
         });
 
-        // Generar nombre del batch si no se proporcionó
         let batchName = batch_name;
         if (!batchName && group.nickname) {
           batchName = `Batch - ${group.nickname}`;
@@ -730,16 +775,14 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
           batchName = `Batch - ${group.from_number}`;
         }
 
-        // Convertir start_time a trigger_timestamp (Unix timestamp en milisegundos)
         let triggerTimestamp = undefined;
         if (start_time) {
           const date = new Date(start_time);
           if (!isNaN(date.getTime())) {
-            triggerTimestamp = date.getTime(); // Unix timestamp en milisegundos
+            triggerTimestamp = date.getTime();
           }
         }
 
-        // Crear batch call según documentación oficial
         const batchResult = await createBatchCall({
           apiKey,
           from_number: group.from_number,
@@ -766,11 +809,10 @@ app.post('/api/retell/create-batch-call', upload.single('csvFile'), async (req, 
             error: batchResult.error || 'Error desconocido',
             statusCode: batchResult.statusCode,
             total_calls: tasks.length,
-            responseData: batchResult.data, // Incluir respuesta completa para debugging
+            responseData: batchResult.data,
           });
         }
 
-        // Pequeña pausa para evitar rate limiting
         await new Promise(resolve => setTimeout(resolve, 200));
       } catch (error) {
         errors.push({

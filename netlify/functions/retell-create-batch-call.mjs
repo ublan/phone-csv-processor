@@ -26,6 +26,8 @@ function parseMultipart(event) {
     let start_time = '';
     let reserved_concurrency = '';
     let generatedNumbersJson = '';
+    let from_number = '';
+    let from_number = '';
 
     busboy.on('file', (name, file) => {
       if (name !== 'csvFile') {
@@ -47,6 +49,7 @@ function parseMultipart(event) {
       else if (name === 'start_time') start_time = value;
       else if (name === 'reserved_concurrency') reserved_concurrency = value;
       else if (name === 'generatedNumbers') generatedNumbersJson = value;
+      else if (name === 'from_number') from_number = value;
     });
 
     busboy.on('finish', () => {
@@ -58,6 +61,7 @@ function parseMultipart(event) {
         start_time,
         reserved_concurrency,
         generatedNumbersJson,
+        from_number,
       });
     });
 
@@ -99,6 +103,7 @@ export const handler = async (event) => {
       start_time = body.start_time || '';
       reserved_concurrency = body.reserved_concurrency || '';
       generatedNumbersJson = body.generatedNumbers || '';
+      from_number = body.from_number || '';
     } else if (contentType.includes('multipart/form-data')) {
       const parsed = await parseMultipart(event);
       apiKey = parsed.apiKey || '';
@@ -108,6 +113,7 @@ export const handler = async (event) => {
       start_time = parsed.start_time || '';
       reserved_concurrency = parsed.reserved_concurrency || '';
       generatedNumbersJson = parsed.generatedNumbersJson || '';
+      from_number = parsed.from_number || '';
     } else {
       return {
         statusCode: 400,
@@ -144,6 +150,70 @@ export const handler = async (event) => {
 
     const contacts = parseResult.contacts;
 
+    // Si el cliente envía from_number explícito, crear un solo batch con ese número
+    if (from_number) {
+      const normalizedFrom = from_number.startsWith('+') ? from_number : `+${from_number}`;
+
+      const tasks = contacts.map((contact) => {
+        const task = {
+          phone_number: contact.phone_number,
+          variables: contact.variables,
+        };
+        if (agent_id) task.override_agent_id = agent_id;
+        return task;
+      });
+
+      let batchName = batch_name || `Batch - ${normalizedFrom}`;
+
+      let triggerTimestamp;
+      if (start_time) {
+        const date = new Date(start_time);
+        if (!isNaN(date.getTime())) triggerTimestamp = date.getTime();
+      }
+
+      const batchResult = await createBatchCall({
+        apiKey,
+        from_number: normalizedFrom,
+        tasks,
+        name: batchName,
+        trigger_timestamp: triggerTimestamp,
+        reserved_concurrency: reserved_concurrency ? parseInt(reserved_concurrency, 10) : undefined,
+      });
+
+      if (!batchResult.success) {
+        return {
+          statusCode: batchResult.statusCode || 400,
+          headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            success: false,
+            error: batchResult.error || 'Error al crear el batch call',
+            data: batchResult.data,
+          }),
+        };
+      }
+
+      return {
+        statusCode: 200,
+        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: true,
+          total_contacts: contacts.length,
+          batches_created: 1,
+          batches_failed: 0,
+          results: [{
+            success: true,
+            batch_call_id: batchResult.batch_call_id,
+            from_number: normalizedFrom,
+            nickname: null,
+            total_calls: tasks.length,
+            batch_name: batchName,
+            data: batchResult.data,
+          }],
+        }),
+      };
+    }
+
+    // Si no se envía from_number, usar lógica anterior agrupando por prefijo
     let generatedNumbers = [];
     if (generatedNumbersJson) {
       try {
