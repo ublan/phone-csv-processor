@@ -897,6 +897,23 @@ app.get('/api/retell/list-batch-calls', async (req, res) => {
   }
 });
 
+// Rutas amigables del frontend (SPA) para cada herramienta
+const INDEX_HTML_PATH = join(process.cwd(), 'public', 'index.html');
+const FRONTEND_ROUTES = [
+  '/',
+  '/procesar-csv',
+  '/importar-retell',
+  '/batch-calling',
+  '/gestionar-numeros',
+  '/comparar-listas',
+];
+
+FRONTEND_ROUTES.forEach((route) => {
+  app.get(route, (req, res) => {
+    res.sendFile(INDEX_HTML_PATH);
+  });
+});
+
 const PORT = process.env.PORT || 3334;
 app.listen(PORT, () => {
   console.log(`API: http://localhost:${PORT}`);

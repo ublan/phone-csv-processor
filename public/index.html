@@ -805,13 +805,19 @@
       }
     });
 
-    // ===== SECCIÓN DE IMPORTACIÓN DIRECTA =====
+    // ===== SECCIÓN DE IMPORTACIÓN DIRECTA / NAVEGACIÓN DE TABS =====
     const processSection = document.getElementById('processSection');
     const importSection = document.getElementById('importSection');
+    const batchCallSection = document.getElementById('batchCallSection');
+    const manageSection = document.getElementById('manageSection');
+    const compareSection = document.getElementById('compareSection');
+
     const tabProcess = document.getElementById('tabProcess');
     const tabImport = document.getElementById('tabImport');
-    const compareSection = document.getElementById('compareSection');
+    const tabBatchCall = document.getElementById('tabBatchCall');
+    const tabManage = document.getElementById('tabManage');
     const tabCompare = document.getElementById('tabCompare');
+
     const directImportForm = document.getElementById('directImportForm');
     const directNumberSource = document.getElementById('directNumberSource');
     const directCsvUploadGroup = document.getElementById('directCsvUploadGroup');
@@ -825,60 +831,97 @@
     const directImportSubmitBtn = document.getElementById('directImportSubmitBtn');
     const directImportMsg = document.getElementById('directImportMsg');
 
-    // Navegación entre tabs
-    tabProcess.addEventListener('click', () => {
-      processSection.style.display = 'block';
+    // Helper para activar pestañas y sincronizar con la URL
+    function setActiveTab(tab) {
+      // Reset secciones
+      processSection.style.display = 'none';
       importSection.style.display = 'none';
       batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
       compareSection.style.display = 'none';
-      tabProcess.classList.add('active');
+
+      // Reset clases de tabs
+      tabProcess.classList.remove('active');
       tabImport.classList.remove('active');
       tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
       tabCompare.classList.remove('active');
+
+      let path = '/procesar-csv';
+
+      if (tab === 'process') {
+        processSection.style.display = 'block';
+        tabProcess.classList.add('active');
+        path = '/procesar-csv';
+      } else if (tab === 'import') {
+        importSection.style.display = 'block';
+        tabImport.classList.add('active');
+        path = '/importar-retell';
+      } else if (tab === 'batch') {
+        batchCallSection.style.display = 'block';
+        tabBatchCall.classList.add('active');
+        path = '/batch-calling';
+      } else if (tab === 'manage') {
+        manageSection.style.display = 'block';
+        tabManage.classList.add('active');
+        path = '/gestionar-numeros';
+      } else if (tab === 'compare') {
+        compareSection.style.display = 'block';
+        tabCompare.classList.add('active');
+        path = '/comparar-listas';
+      }
+
+      // Actualizar URL sin recargar la página
+      if (window.location.pathname !== path) {
+        window.history.pushState({ tab }, '', path);
+      }
+    }
+
+    // Navegación entre tabs
+    tabProcess.addEventListener('click', () => {
+      setActiveTab('process');
     });
 
     tabImport.addEventListener('click', () => {
-      processSection.style.display = 'none';
-      importSection.style.display = 'block';
-      batchCallSection.style.display = 'none';
-      manageSection.style.display = 'none';
-      compareSection.style.display = 'none';
-      tabProcess.classList.remove('active');
-      tabImport.classList.add('active');
-      tabBatchCall.classList.remove('active');
-      tabManage.classList.remove('active');
-      tabCompare.classList.remove('active');
+      setActiveTab('import');
     });
 
     tabManage.addEventListener('click', () => {
-      processSection.style.display = 'none';
-      importSection.style.display = 'none';
-      batchCallSection.style.display = 'none';
-      manageSection.style.display = 'block';
-      compareSection.style.display = 'none';
-      tabProcess.classList.remove('active');
-      tabImport.classList.remove('active');
-      tabBatchCall.classList.remove('active');
-      tabManage.classList.add('active');
-      tabCompare.classList.remove('active');
+      setActiveTab('manage');
     });
 
     if (tabCompare && compareSection) {
       tabCompare.addEventListener('click', () => {
-        processSection.style.display = 'none';
-        importSection.style.display = 'none';
-        batchCallSection.style.display = 'none';
-        manageSection.style.display = 'none';
-        compareSection.style.display = 'block';
-        tabProcess.classList.remove('active');
-        tabImport.classList.remove('active');
-        tabBatchCall.classList.remove('active');
-        tabManage.classList.remove('active');
-        tabCompare.classList.add('active');
+        setActiveTab('compare');
       });
     }
+
+    // Seleccionar pestaña inicial según la URL
+    function initTabFromPath() {
+      const path = window.location.pathname || '/';
+      if (path === '/' || path === '/procesar-csv') {
+        setActiveTab('process');
+      } else if (path === '/importar-retell') {
+        setActiveTab('import');
+      } else if (path === '/batch-calling') {
+        setActiveTab('batch');
+      } else if (path === '/gestionar-numeros') {
+        setActiveTab('manage');
+      } else if (path === '/comparar-listas') {
+        setActiveTab('compare');
+      } else {
+        // Cualquier otra ruta desconocida cae en Procesar CSV
+        setActiveTab('process');
+      }
+    }
+
+    // Manejar navegación con atrás/adelante del navegador
+    window.addEventListener('popstate', () => {
+      initTabFromPath();
+    });
+
+    // Inicializar al cargar
+    initTabFromPath();
 
     // Manejar cambio de fuente de números en importación directa
     directNumberSource.addEventListener('change', (e) => {
@@ -1061,8 +1104,6 @@
     });
 
     // ===== SECCIÓN DE BATCH CALLING =====
-    const batchCallSection = document.getElementById('batchCallSection');
-    const tabBatchCall = document.getElementById('tabBatchCall');
     const batchCallForm = document.getElementById('batchCallForm');
     const batchCallCsvFile = document.getElementById('batchCallCsvFile');
     const batchCallPreview = document.getElementById('batchCallPreview');
@@ -1083,16 +1124,7 @@
 
     // Navegación a Batch Calling
     tabBatchCall.addEventListener('click', () => {
-      processSection.style.display = 'none';
-      importSection.style.display = 'none';
-      manageSection.style.display = 'none';
-      compareSection.style.display = 'none';
-      batchCallSection.style.display = 'block';
-      tabProcess.classList.remove('active');
-      tabImport.classList.remove('active');
-      tabManage.classList.remove('active');
-      tabCompare.classList.remove('active');
-      tabBatchCall.classList.add('active');
+      setActiveTab('batch');
     });
 
     // Preview del CSV cuando se selecciona

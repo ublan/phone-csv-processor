@@ -11,6 +11,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:busboy@^1.6.0",
         "npm:cors@^2.8.5",
         "npm:dotenv@^16.3.1",
         "npm:express@^4.18.2",
