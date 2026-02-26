@@ -898,6 +898,17 @@ app.get('/api/retell/list-batch-calls', async (req, res) => {
   }
 });
 
+// Config pública para ProxyLink (usa la anon key de Supabase definida en .env)
+app.get('/api/proxy/config', (req, res) => {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return res.status(404).json({ error: 'Supabase no está configurado en este proyecto.' });
+  }
+  // La anon key es pública por diseño, se puede exponer al frontend
+  res.json({ supabaseUrl, supabaseAnonKey });
+});
+
 // Rutas amigables del frontend (SPA) para cada herramienta
 const INDEX_HTML_PATH = join(process.cwd(), 'public', 'index.html');
 const FRONTEND_ROUTES = [
@@ -908,6 +919,7 @@ const FRONTEND_ROUTES = [
   '/gestionar-numeros',
   '/comparar-listas',
   '/plantillas-whatsapp',
+  '/proxy-link',
 ];
 
 FRONTEND_ROUTES.forEach((route) => {

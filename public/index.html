@@ -18,7 +18,7 @@
       <button type="button" class="tab-btn" id="tabManage">Gestionar Números</button>
       <button type="button" class="tab-btn" id="tabCompare">Comparar Listas / JSON</button>
       <button type="button" class="tab-btn" id="tabWhatsAppTemplates">Plantillas WhatsApp</button>
-      <a href="https://url-redirect-post-ge-rwgf.bolt.host" target="_blank" rel="noopener noreferrer" class="sidebar-link">ProxyLink</a>
+      <button type="button" class="tab-btn" id="tabProxyLink">ProxyLink</button>
     </nav>
   </aside>
 
@@ -213,6 +213,9 @@
       <button class="tab-btn" id="compareModeSplit" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
         Dividir lista
       </button>
+      <button class="tab-btn" id="compareModeNoLlama" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
+        Borrar No Llama
+      </button>
       <button class="tab-btn" id="compareModeJson" style="flex: 1; min-width: 140px; padding: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 0.9rem;">
         JSON → CSV
       </button>
@@ -286,6 +289,75 @@
           No hay resultados todavía.
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Sección ProxyLink -->
+  <div class="card card-large" id="proxyLinkSection" style="display: none;">
+    <h2 class="section-title">ProxyLink</h2>
+    <p class="section-desc">
+      Genera URLs proxy que capturan parámetros de consulta, envían un POST JSON a tu webhook y luego redirigen al usuario a la URL de destino.
+    </p>
+
+    <div class="wa-card" id="proxyCredsCard" style="margin-top: 1rem;">
+      <div class="wa-card-header">
+        <span class="material-icons-outlined wa-card-icon">cloud</span>
+        <span>Credenciales Supabase</span>
+      </div>
+      <div class="wa-fields">
+        <div id="proxyCredsManual">
+          <div class="wa-field">
+            <label class="wa-label" for="proxySupabaseUrl">Supabase URL *</label>
+            <input type="text" id="proxySupabaseUrl" class="wa-input" placeholder="https://XYZ.supabase.co" />
+          </div>
+          <div class="wa-field">
+            <label class="wa-label" for="proxySupabaseKey">Supabase anon key *</label>
+            <input type="password" id="proxySupabaseKey" class="wa-input" placeholder="public anon key" />
+          </div>
+        </div>
+        <div class="wa-field" style="display:flex;align-items:center;gap:0.75rem;">
+          <button type="button" class="wa-btn wa-btn-secondary wa-btn-small" id="proxyConnectBtn">
+            <span class="material-icons-outlined" style="font-size:16px;">link</span>
+            <span>Conectar &amp; listar URLs</span>
+          </button>
+          <span id="proxyStatus" class="wa-hint" style="text-transform:none;"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wa-card">
+      <div class="wa-card-header">
+        <span class="material-icons-outlined wa-card-icon">add_link</span>
+        <span>Crear Proxy URL</span>
+      </div>
+      <form id="proxyCreateForm" class="wa-fields">
+        <div class="wa-field">
+          <label class="wa-label" for="proxyLabel">Label (opcional)</label>
+          <input type="text" id="proxyLabel" class="wa-input" placeholder="e.g. Email campaign - Jan 2026" />
+        </div>
+        <div class="wa-field">
+          <label class="wa-label" for="proxyRedirectUrl">Redirect URL *</label>
+          <input type="url" id="proxyRedirectUrl" class="wa-input" placeholder="https://your-site.com/destination" required />
+          <p class="wa-hint" style="text-transform:none;">El usuario será redirigido aquí después del click.</p>
+        </div>
+        <div class="wa-field">
+          <label class="wa-label" for="proxyPostUrl">POST Webhook URL *</label>
+          <input type="url" id="proxyPostUrl" class="wa-input" placeholder="https://your-api.com/webhook" required />
+          <p class="wa-hint" style="text-transform:none;">Todos los query params se enviarán como JSON a este endpoint.</p>
+        </div>
+        <div id="proxyError" class="wa-verify-result"></div>
+        <button type="submit" class="wa-btn wa-btn-primary" id="proxyCreateBtn">Generar Proxy URL</button>
+      </form>
+    </div>
+
+    <div class="wa-card">
+      <div class="wa-card-header">
+        <span class="material-icons-outlined wa-card-icon">list</span>
+        <span>Tus Proxy URLs</span>
+      </div>
+      <div id="proxyListLoading" style="display:none;" class="wa-verify-result">Cargando configuraciones...</div>
+      <div id="proxyListEmpty" class="wa-verify-result" style="display:none;">Aún no hay Proxy URLs. Crea la primera usando el formulario.</div>
+      <div id="proxyListContainer" class="wa-buttons-rows" style="gap:1rem;"></div>
     </div>
   </div>
 
@@ -409,13 +481,20 @@
           </div>
           <div class="wa-grid-2">
             <div class="wa-field">
-              <label class="wa-label" for="waWabaId">WABA ID (WhatsApp Business Account ID) *</label>
+              <label class="wa-label" for="waWabaId">WABA ID (W.A Business Account ID) *</label>
               <input type="text" id="waWabaId" class="wa-input" placeholder="1911774739699629" />
             </div>
             <div class="wa-field">
               <label class="wa-label" for="waAccessToken">Access Token *</label>
               <input type="password" id="waAccessToken" class="wa-input" placeholder="Bearer token de Meta" />
             </div>
+          </div>
+          <div class="wa-field" style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.75rem;">
+            <button type="button" class="wa-btn wa-btn-secondary wa-btn-small" id="waLoadAccountBtn">
+              <span class="material-icons-outlined" style="font-size: 16px;">refresh</span>
+              <span>Cargar datos de la cuenta</span>
+            </button>
+            <span id="waAccountStatus" class="wa-hint" style="text-transform:none;"></span>
           </div>
         </div>
 
@@ -538,6 +617,7 @@
 
         <div class="wa-actions">
           <button type="button" class="wa-btn wa-btn-primary" id="waCreateTemplateBtn">Crear Plantilla</button>
+          <button type="button" class="wa-btn wa-btn-secondary wa-btn-small" id="waDownloadTemplateJsonBtn">Descargar JSON</button>
           <div id="waTemplateMsg" class="wa-msg"></div>
           <div id="waTemplateIdResult" class="wa-id-result" style="display: none;">
             <strong>ID de plantilla:</strong> <code id="waTemplateIdValue"></code>
@@ -556,6 +636,44 @@
           </div>
           <button type="button" class="wa-btn wa-btn-primary" id="waVerifyBtn">Verificar estado</button>
           <div id="waVerifyResult" class="wa-verify-result"></div>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card-header">
+            <span class="material-icons-outlined wa-card-icon">send</span>
+            <span>Enviar mensaje con plantilla</span>
+          </div>
+          <div class="wa-field">
+            <label class="wa-label" for="waPhoneNumberId">Phone Number ID *</label>
+            <select id="waPhoneNumberId" class="wa-input">
+              <option value="">Selecciona un número disponible...</option>
+            </select>
+            <p class="wa-hint">Números obtenidos desde el WABA. Se usa en el endpoint /PHONE_NUMBER_ID/messages.</p>
+          </div>
+          <div class="wa-field">
+            <label class="wa-label" for="waSendTo">Destino (número del cliente) *</label>
+            <input type="text" id="waSendTo" class="wa-input" placeholder="+5491122334455" />
+            <p class="wa-hint">Debe estar en formato internacional. Si no comienza con +, se le añadirá automáticamente.</p>
+          </div>
+          <div class="wa-field">
+            <label class="wa-label" for="waTemplatePicker">Plantilla a usar</label>
+            <select id="waTemplatePicker" class="wa-input">
+              <option value="">— Selecciona una plantilla cargada desde Meta —</option>
+            </select>
+            <p class="wa-hint" style="text-transform:none;">Al elegir una plantilla se rellenan automáticamente el nombre y el idioma configurados arriba. Asegúrate de que la plantilla exista y esté aprobada.</p>
+          </div>
+          <button type="button" class="wa-btn wa-btn-primary" id="waSendTemplateBtn">Enviar mensaje</button>
+          <div id="waSendResult" class="wa-verify-result"></div>
+          <div class="wa-field" id="waSelectedTemplatePreview" style="margin-top: 1rem; display: none;">
+            <label class="wa-label">Plantilla seleccionada desde Meta</label>
+            <div class="wa-phone-bubble" style="margin-bottom: 0.5rem;">
+              <p id="waSelectedTemplateBodyText" style="margin: 0; white-space: pre-wrap;"></p>
+            </div>
+            <div id="waSelectedTemplateButtonsWrapper" style="display:none;">
+              <p class="wa-hint" style="margin: 0 0 0.25rem;">Botones de la plantilla:</p>
+              <div id="waSelectedTemplateButtons" class="wa-phone-buttons"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -599,6 +717,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const API = window.location.origin;
     const zone = document.getElementById('zone');
@@ -956,6 +1075,8 @@
     const tabManage = document.getElementById('tabManage');
     const tabCompare = document.getElementById('tabCompare');
     const tabWhatsAppTemplates = document.getElementById('tabWhatsAppTemplates');
+    const proxyLinkSection = document.getElementById('proxyLinkSection');
+    const tabProxyLink = document.getElementById('tabProxyLink');
 
     const directImportForm = document.getElementById('directImportForm');
     const directNumberSource = document.getElementById('directNumberSource');
@@ -979,6 +1100,7 @@
       manageSection.style.display = 'none';
       compareSection.style.display = 'none';
       if (whatsAppTemplatesSection) whatsAppTemplatesSection.style.display = 'none';
+      if (proxyLinkSection) proxyLinkSection.style.display = 'none';
 
       // Reset clases de tabs
       tabProcess.classList.remove('active');
@@ -987,6 +1109,7 @@
       tabManage.classList.remove('active');
       tabCompare.classList.remove('active');
       if (tabWhatsAppTemplates) tabWhatsAppTemplates.classList.remove('active');
+      if (tabProxyLink) tabProxyLink.classList.remove('active');
 
       let path = '/procesar-csv';
 
@@ -1014,6 +1137,10 @@
         if (whatsAppTemplatesSection) whatsAppTemplatesSection.style.display = 'block';
         if (tabWhatsAppTemplates) tabWhatsAppTemplates.classList.add('active');
         path = '/plantillas-whatsapp';
+      } else if (tab === 'proxy') {
+        if (proxyLinkSection) proxyLinkSection.style.display = 'block';
+        if (tabProxyLink) tabProxyLink.classList.add('active');
+        path = '/proxy-link';
       }
 
       // Actualizar URL sin recargar la página
@@ -1043,6 +1170,9 @@
     if (tabWhatsAppTemplates) {
       tabWhatsAppTemplates.addEventListener('click', () => setActiveTab('whatsapp'));
     }
+    if (tabProxyLink) {
+      tabProxyLink.addEventListener('click', () => setActiveTab('proxy'));
+    }
 
     // Seleccionar pestaña inicial según la URL
     function initTabFromPath() {
@@ -1059,6 +1189,8 @@
         setActiveTab('compare');
       } else if (path === '/plantillas-whatsapp') {
         setActiveTab('whatsapp');
+      } else if (path === '/proxy-link') {
+        setActiveTab('proxy');
       } else {
         // Cualquier otra ruta desconocida cae en Procesar CSV
         setActiveTab('process');
@@ -1515,12 +1647,51 @@
     const waPreviewBubble = document.getElementById('waPreviewBubble');
     const waPreviewButtons = document.getElementById('waPreviewButtons');
     const waCreateTemplateBtn = document.getElementById('waCreateTemplateBtn');
+    const waDownloadTemplateJsonBtn = document.getElementById('waDownloadTemplateJsonBtn');
     const waTemplateMsg = document.getElementById('waTemplateMsg');
     const waTemplateIdResult = document.getElementById('waTemplateIdResult');
     const waTemplateIdValue = document.getElementById('waTemplateIdValue');
     const waVerifyTemplateId = document.getElementById('waVerifyTemplateId');
     const waVerifyBtn = document.getElementById('waVerifyBtn');
     const waVerifyResult = document.getElementById('waVerifyResult');
+    const waLoadAccountBtn = document.getElementById('waLoadAccountBtn');
+    const waAccountStatus = document.getElementById('waAccountStatus');
+    const waPhoneNumberId = document.getElementById('waPhoneNumberId');
+    const waSendTo = document.getElementById('waSendTo');
+    const waSendTemplateBtn = document.getElementById('waSendTemplateBtn');
+    const waSendResult = document.getElementById('waSendResult');
+    const waTemplatePicker = document.getElementById('waTemplatePicker');
+    const waSelectedTemplatePreview = document.getElementById('waSelectedTemplatePreview');
+    const waSelectedTemplateBodyText = document.getElementById('waSelectedTemplateBodyText');
+    const waSelectedTemplateButtonsWrapper = document.getElementById('waSelectedTemplateButtonsWrapper');
+    const waSelectedTemplateButtons = document.getElementById('waSelectedTemplateButtons');
+
+    // ===== SECCIÓN PROXYLINK =====
+    const proxySupabaseUrlInput = document.getElementById('proxySupabaseUrl');
+    const proxySupabaseKeyInput = document.getElementById('proxySupabaseKey');
+    const proxyConnectBtn = document.getElementById('proxyConnectBtn');
+    const proxyStatus = document.getElementById('proxyStatus');
+    const proxyCreateForm = document.getElementById('proxyCreateForm');
+    const proxyLabelInput = document.getElementById('proxyLabel');
+    const proxyRedirectUrlInput = document.getElementById('proxyRedirectUrl');
+    const proxyPostUrlInput = document.getElementById('proxyPostUrl');
+    const proxyError = document.getElementById('proxyError');
+    const proxyListLoading = document.getElementById('proxyListLoading');
+    const proxyListEmpty = document.getElementById('proxyListEmpty');
+    const proxyListContainer = document.getElementById('proxyListContainer');
+    const proxyCredsManual = document.getElementById('proxyCredsManual');
+    const proxyCredsCard = document.getElementById('proxyCredsCard');
+
+    let proxySupabase = null;
+    let proxyEnvConfig = null;
+    function proxyGenerateSlug() {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let out = '';
+      for (let i = 0; i < 8; i++) {
+        out += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return out;
+    }
 
     // Validación: nombre solo minúsculas, números y _
     function waValidateName(name) {
@@ -1538,6 +1709,28 @@
       const badVar = t.match(/\{\{[^}\s]+\}\}/g);
       if (badVar && badVar.some(v => !/^\{\{[a-zA-Z0-9_]+\}\}$/.test(v))) return { ok: false, msg: 'Variables deben ser {{1}}, {{2}} o {{nombre_valido}}.' };
       return { ok: true, value: t };
+    }
+
+    function waBuildComponents() {
+      const bodyRes = waValidateBody(waTemplateBody && waTemplateBody.value);
+      const components = [];
+      if (bodyRes.ok) {
+        components.push({ type: 'BODY', text: bodyRes.value });
+      }
+      const buttons = [];
+      document.querySelectorAll('.wa-btn-type').forEach((sel, i) => {
+        const type = sel.value;
+        const textInp = document.querySelector('.wa-btn-text[data-btn="' + i + '"]');
+        const urlInp = document.querySelector('.wa-btn-url[data-btn="' + i + '"]');
+        if (type === 'QUICK_REPLY' && textInp && textInp.value.trim()) {
+          buttons.push({ type: 'QUICK_REPLY', text: textInp.value.trim() });
+        }
+        if (type === 'URL' && textInp && textInp.value.trim() && urlInp && urlInp.value.trim()) {
+          buttons.push({ type: 'URL', text: textInp.value.trim(), url: urlInp.value.trim() });
+        }
+      });
+      if (buttons.length) components.push({ type: 'BUTTONS', buttons });
+      return { bodyRes, components };
     }
 
     function waUpdatePreview() {
@@ -1606,7 +1799,7 @@
         const waba = waWabaId && waWabaId.value.trim();
         const token = waAccessToken && waAccessToken.value.trim();
         const nameRes = waValidateName(waTemplateName && waTemplateName.value);
-        const bodyRes = waValidateBody(waTemplateBody && waTemplateBody.value);
+        const { bodyRes, components } = waBuildComponents();
         if (!waba || !token) {
           waTemplateMsg.textContent = 'WABA ID y Access Token son obligatorios.';
           waTemplateMsg.className = 'msg error';
@@ -1622,20 +1815,6 @@
           waTemplateMsg.className = 'msg error';
           return;
         }
-        const components = [{ type: 'BODY', text: bodyRes.value }];
-        const buttons = [];
-        document.querySelectorAll('.wa-btn-type').forEach((sel, i) => {
-          const type = sel.value;
-          const textInp = document.querySelector('.wa-btn-text[data-btn="' + i + '"]');
-          const urlInp = document.querySelector('.wa-btn-url[data-btn="' + i + '"]');
-          if (type === 'QUICK_REPLY' && textInp && textInp.value.trim()) {
-            buttons.push({ type: 'QUICK_REPLY', text: textInp.value.trim() });
-          }
-          if (type === 'URL' && textInp && textInp.value.trim() && urlInp && urlInp.value.trim()) {
-            buttons.push({ type: 'URL', text: textInp.value.trim(), url: urlInp.value.trim() });
-          }
-        });
-        if (buttons.length) components.push({ type: 'BUTTONS', buttons });
         const body = {
           name: nameRes.value,
           language: (waTemplateLanguage && waTemplateLanguage.value) || 'es',
@@ -1670,6 +1849,38 @@
           waTemplateMsg.className = 'msg error';
         }
         waCreateTemplateBtn.disabled = false;
+      });
+    }
+
+    if (waDownloadTemplateJsonBtn) {
+      waDownloadTemplateJsonBtn.addEventListener('click', () => {
+        const nameRes = waValidateName(waTemplateName && waTemplateName.value);
+        const { bodyRes, components } = waBuildComponents();
+        if (!nameRes.ok) {
+          waTemplateMsg.textContent = nameRes.msg;
+          waTemplateMsg.className = 'msg error';
+          return;
+        }
+        if (!bodyRes.ok) {
+          waTemplateMsg.textContent = bodyRes.msg;
+          waTemplateMsg.className = 'msg error';
+          return;
+        }
+        const json = {
+          name: nameRes.value,
+          language: (waTemplateLanguage && waTemplateLanguage.value) || 'es',
+          category: (waTemplateCategory && waTemplateCategory.value) || 'MARKETING',
+          components,
+        };
+        const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${nameRes.value}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       });
     }
 
@@ -1716,6 +1927,502 @@
         ta.selectionStart = ta.selectionEnd = start + insert.length;
         ta.focus();
         waUpdatePreview();
+      });
+    }
+
+    // Cargar números (phone_number_id) y plantillas desde el WABA
+    async function waFetchMeta(path, token) {
+      const url = META_GRAPH + '/' + path;
+      const res = await fetch(url, {
+        headers: { Authorization: 'Bearer ' + token },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error((data.error && data.error.message) || JSON.stringify(data));
+      }
+      return data;
+    }
+
+    if (waLoadAccountBtn) {
+      waLoadAccountBtn.addEventListener('click', async () => {
+        const waba = waWabaId && waWabaId.value.trim();
+        const token = waAccessToken && waAccessToken.value.trim();
+        if (!waba || !token) {
+          if (waAccountStatus) {
+            waAccountStatus.textContent = 'Ingresa WABA ID y Access Token primero.';
+            waAccountStatus.style.color = 'var(--error)';
+          }
+          return;
+        }
+
+        if (waAccountStatus) {
+          waAccountStatus.textContent = 'Cargando números y plantillas...';
+          waAccountStatus.style.color = '';
+        }
+        waLoadAccountBtn.disabled = true;
+
+        try {
+          // Según la documentación de Meta:
+          // GET /{WABA_ID}/phone_numbers
+          // GET /{WABA_ID}/message_templates
+          const [phones, templates] = await Promise.all([
+            // Documentado en Cloud API: GET /{WABA_ID}/phone_numbers
+            waFetchMeta(encodeURIComponent(waba) + '/phone_numbers', token),
+            // GET /{WABA_ID}/message_templates?fields=name,language,category,status&limit=1000
+            waFetchMeta(
+              encodeURIComponent(waba) +
+                '/message_templates?fields=name,language,category,status&limit=1000',
+              token
+            ),
+          ]);
+
+          // Rellenar Phone Number ID select
+          if (waPhoneNumberId && waPhoneNumberId.tagName === 'SELECT') {
+            waPhoneNumberId.innerHTML = '<option value=\"\">Selecciona un número disponible...</option>';
+            const list = Array.isArray(phones.data) ? phones.data : [];
+            list.forEach((p) => {
+              const opt = document.createElement('option');
+              opt.value = p.id;
+              const num = p.display_phone_number || p.verified_name || p.id;
+              const name = p.verified_name ? ` — ${p.verified_name}` : '';
+              opt.textContent = `${num}${name}`;
+              waPhoneNumberId.appendChild(opt);
+            });
+          }
+
+          // Rellenar selector de plantillas
+          if (waTemplatePicker && waTemplatePicker.tagName === 'SELECT') {
+            waTemplatePicker.innerHTML = '<option value=\"\">— Selecciona una plantilla —</option>';
+            const list = Array.isArray(templates.data) ? templates.data : [];
+            list.forEach((t) => {
+              const opt = document.createElement('option');
+              opt.value = t.name + '|' + t.language;
+              const status = t.status || '';
+              opt.textContent = `${t.name} (${t.language}, ${t.category || ''}${status ? ', ' + status : ''})`;
+              waTemplatePicker.appendChild(opt);
+            });
+          }
+
+          if (waAccountStatus) {
+            const phonesCount = Array.isArray(phones.data) ? phones.data.length : 0;
+            const templatesCount = Array.isArray(templates.data) ? templates.data.length : 0;
+            waAccountStatus.textContent = `Cargados ${phonesCount} números y ${templatesCount} plantillas.`;
+            waAccountStatus.style.color = 'var(--accent)';
+          }
+        } catch (e) {
+          if (waAccountStatus) {
+            waAccountStatus.textContent = 'Error al cargar datos: ' + e.message;
+            waAccountStatus.style.color = 'var(--error)';
+          }
+        } finally {
+          waLoadAccountBtn.disabled = false;
+        }
+      });
+    }
+
+    async function waLoadSelectedTemplateBody(name, lang) {
+      if (!waWabaId || !waAccessToken || !name) return;
+      const waba = waWabaId.value.trim();
+      const token = waAccessToken.value.trim();
+      if (!waba || !token) return;
+      try {
+        const path =
+          encodeURIComponent(waba) +
+          '/message_templates?name=' +
+          encodeURIComponent(name) +
+          (lang ? '&language=' + encodeURIComponent(lang) : '') +
+          '&fields=name,language,category,status,components&limit=1';
+        const data = await waFetchMeta(path, token);
+        const list = Array.isArray(data.data) ? data.data : [];
+        const tpl = list[0];
+        if (!tpl) {
+          return;
+        }
+        const bodyComp =
+          (tpl.components || []).find((c) => c.type === 'BODY') || null;
+        const buttonsComp =
+          (tpl.components || []).find((c) => c.type === 'BUTTONS') || null;
+        const text =
+          (bodyComp && bodyComp.text) ||
+          'Esta plantilla no tiene componente BODY definido.';
+
+        // Volcar el BODY en el textarea principal para reutilizar la previsualización
+        if (waTemplateBody) {
+          waTemplateBody.value = text;
+        }
+
+        // Sincronizar los botones del template de Meta con los 3 slots de botones del builder
+        const allMetaButtons =
+          (buttonsComp && Array.isArray(buttonsComp.buttons)) ? buttonsComp.buttons : [];
+        const btnTypes = document.querySelectorAll('.wa-btn-type');
+        btnTypes.forEach((sel) => {
+          const idxStr = sel.getAttribute('data-btn') || '0';
+          const idx = parseInt(idxStr, 10) || 0;
+          const textInp = document.querySelector('.wa-btn-text[data-btn=\"' + idx + '\"]');
+          const urlInp = document.querySelector('.wa-btn-url[data-btn=\"' + idx + '\"]');
+          const metaBtn = allMetaButtons[idx] || null;
+          if (metaBtn) {
+            sel.value = metaBtn.type || '';
+            if (textInp) textInp.value = metaBtn.text || '';
+            if (urlInp) urlInp.value = metaBtn.url || '';
+          } else {
+            sel.value = '';
+            if (textInp) textInp.value = '';
+            if (urlInp) urlInp.value = '';
+          }
+          // Disparar change para que se apliquen las clases/visibilidad y se actualice la preview
+          sel.dispatchEvent(new Event('change'));
+        });
+
+        // Actualizar la burbuja de preview con el cuerpo recién cargado
+        waUpdatePreview();
+      } catch (e) {
+        // Si falla la carga desde Meta, dejamos el estado tal cual estaba en el builder
+        console.error('Error al cargar plantilla desde Meta:', e);
+      }
+    }
+
+    if (waTemplatePicker) {
+      waTemplatePicker.addEventListener('change', () => {
+        const value = waTemplatePicker.value;
+        if (!value) {
+          return;
+        }
+        const [name, lang] = value.split('|');
+        if (waTemplateName) waTemplateName.value = name;
+        if (waTemplateLanguage) waTemplateLanguage.value = lang || 'es';
+        waUpdatePreview();
+        waLoadSelectedTemplateBody(name, lang || 'es');
+      });
+    }
+
+    async function proxyEnsureClient() {
+      if (proxySupabase) return proxySupabase;
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error('Supabase JS no está disponible');
+      }
+      let url = proxySupabaseUrlInput && proxySupabaseUrlInput.value.trim();
+      let key = proxySupabaseKeyInput && proxySupabaseKeyInput.value.trim();
+      if ((!url || !key) && proxyEnvConfig) {
+        url = proxyEnvConfig.supabaseUrl;
+        key = proxyEnvConfig.supabaseAnonKey;
+      }
+      if (!url || !key) {
+        throw new Error('Supabase URL y anon key son requeridos');
+      }
+      proxySupabase = window.supabase.createClient(url, key);
+      return proxySupabase;
+    }
+
+    async function proxyLoadConfigs() {
+      if (!proxyListContainer || !proxyListLoading || !proxyListEmpty) return;
+      proxyListLoading.style.display = 'block';
+      proxyListEmpty.style.display = 'none';
+      proxyListContainer.innerHTML = '';
+      try {
+        const client = await proxyEnsureClient();
+        const { data, error } = await client
+          .from('url_configs')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        const rows = data || [];
+        if (!rows.length) {
+          proxyListEmpty.style.display = 'block';
+          return;
+        }
+        rows.forEach((config) => {
+          const card = document.createElement('div');
+          card.className = 'wa-card';
+          const created = config.created_at ? new Date(config.created_at) : null;
+          const dateStr = created
+            ? created.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+          // Usar siempre la URL real de Supabase: si hay config de .env la usamos,
+          // si no, tomamos lo que haya en el input.
+          let supUrl = '';
+          if (proxyEnvConfig && proxyEnvConfig.supabaseUrl) {
+            supUrl = proxyEnvConfig.supabaseUrl;
+          } else if (proxySupabaseUrlInput && proxySupabaseUrlInput.value.trim()) {
+            supUrl = proxySupabaseUrlInput.value.trim();
+          }
+          const generatedUrl = supUrl
+            ? `${supUrl}/functions/v1/redirect/${config.slug}`
+            : `/functions/v1/redirect/${config.slug}`;
+          card.innerHTML = `
+            <div class="wa-fields" style="margin-bottom:0;">
+              <div class="wa-field" style="margin-bottom:0.5rem;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;">
+                  <div>
+                    <div style="font-size:0.9rem;font-weight:600;">${config.name || '<span style="color:var(--muted);font-style:italic;">Unnamed</span>'}</div>
+                    ${dateStr ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:0.1rem;">${dateStr}</div>` : ''}
+                  </div>
+                  <span style="font-size:0.7rem;background:var(--bg);border:1px solid var(--border);border-radius:9999px;padding:0.15rem 0.6rem;">${config.slug}</span>
+                </div>
+              </div>
+              <div class="wa-field">
+                <label class="wa-label-small">Generated URL</label>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                  <span style="font-size:0.8rem;color:#53bdeb;word-break:break-all;flex:1;">${generatedUrl}</span>
+                  <button type="button" class="wa-btn-small" data-copy-url style="border-radius:8px;background:var(--border);color:var(--text);border:none;cursor:pointer;">
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <div class="wa-field proxy-redirect-field" data-config-id="${config.id}">
+                <label class="wa-label-small">Redirects to</label>
+                <div class="proxy-redirect-view" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  <a href="${(config.redirect_url || '').replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem;color:var(--accent);text-decoration:none;word-break:break-all;flex:1;min-width:0;">${(config.redirect_url || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</a>
+                  <button type="button" class="wa-btn-small" data-proxy-edit-redirect style="flex-shrink:0;">Editar</button>
+                </div>
+                <div class="proxy-redirect-edit" style="display:none;">
+                  <input type="url" class="wa-input proxy-redirect-input" style="font-size:0.8rem;width:100%;" placeholder="https://..." />
+                  <div style="display:flex;gap:0.5rem;margin-top:0.35rem;">
+                    <button type="button" class="wa-btn-small" data-proxy-save-redirect>Guardar</button>
+                    <button type="button" class="wa-btn-small" data-proxy-cancel-redirect>Cancelar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="wa-field">
+                <label class="wa-label-small">POST webhook</label>
+                <a href="${config.post_url}" target="_blank" rel="noopener noreferrer" style="font-size:0.8rem;color:#22c55e;text-decoration:none;word-break:break-all;">
+                  ${config.post_url}
+                </a>
+              </div>
+            </div>
+          `;
+          const copyBtn = card.querySelector('[data-copy-url]');
+          if (copyBtn) {
+            copyBtn.addEventListener('click', async () => {
+              try {
+                await navigator.clipboard.writeText(generatedUrl);
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => {
+                  copyBtn.textContent = 'Copy';
+                }, 1500);
+              } catch (_) {}
+            });
+          }
+
+          const redirectField = card.querySelector('.proxy-redirect-field');
+          const redirectView = card.querySelector('.proxy-redirect-view');
+          const redirectEdit = card.querySelector('.proxy-redirect-edit');
+          const redirectInput = card.querySelector('.proxy-redirect-input');
+          const redirectLink = redirectView && redirectView.querySelector('a');
+          const editBtn = card.querySelector('[data-proxy-edit-redirect]');
+          const saveBtn = card.querySelector('[data-proxy-save-redirect]');
+          const cancelBtn = card.querySelector('[data-proxy-cancel-redirect]');
+          if (redirectField && redirectView && redirectEdit && redirectInput && redirectLink && editBtn && saveBtn && cancelBtn) {
+            redirectInput.value = config.redirect_url || '';
+            editBtn.addEventListener('click', () => {
+              redirectView.style.display = 'none';
+              redirectEdit.style.display = 'block';
+              redirectInput.value = config.redirect_url || '';
+              redirectInput.focus();
+            });
+            cancelBtn.addEventListener('click', () => {
+              redirectEdit.style.display = 'none';
+              redirectView.style.display = 'flex';
+              redirectInput.value = config.redirect_url || '';
+            });
+            saveBtn.addEventListener('click', async () => {
+              const newUrl = redirectInput.value.trim();
+              if (!newUrl) return;
+              try {
+                const client = await proxyEnsureClient();
+                const { error } = await client
+                  .from('url_configs')
+                  .update({ redirect_url: newUrl })
+                  .eq('id', config.id);
+                if (error) throw error;
+                config.redirect_url = newUrl;
+                redirectLink.href = newUrl;
+                redirectLink.textContent = newUrl;
+                redirectEdit.style.display = 'none';
+                redirectView.style.display = 'flex';
+              } catch (e) {
+                alert('Error al guardar: ' + (e.message || e));
+              }
+            });
+          }
+
+          proxyListContainer.appendChild(card);
+        });
+      } catch (e) {
+        if (proxyStatus) {
+          proxyStatus.textContent = 'Error al cargar URLs: ' + e.message;
+          proxyStatus.style.color = 'var(--error)';
+        }
+      } finally {
+        proxyListLoading.style.display = 'none';
+      }
+    }
+
+    if (proxyConnectBtn) {
+      proxyConnectBtn.addEventListener('click', async () => {
+        if (proxyStatus) {
+          proxyStatus.textContent = 'Conectando a Supabase y cargando URLs...';
+          proxyStatus.style.color = '';
+        }
+        proxyConnectBtn.disabled = true;
+        try {
+          await proxyEnsureClient();
+          await proxyLoadConfigs();
+          if (proxyStatus) {
+            proxyStatus.textContent = 'Conectado. URLs cargadas.';
+            proxyStatus.style.color = 'var(--accent)';
+          }
+        } catch (e) {
+          if (proxyStatus) {
+            proxyStatus.textContent = e.message;
+            proxyStatus.style.color = 'var(--error)';
+          }
+        } finally {
+          proxyConnectBtn.disabled = false;
+        }
+      });
+    }
+
+    if (proxyCreateForm) {
+      proxyCreateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (proxyError) {
+          proxyError.textContent = '';
+          proxyError.style.color = '';
+        }
+        const redirectUrl = proxyRedirectUrlInput && proxyRedirectUrlInput.value.trim();
+        const postUrl = proxyPostUrlInput && proxyPostUrlInput.value.trim();
+        const name = proxyLabelInput && proxyLabelInput.value.trim();
+        if (!redirectUrl || !postUrl) {
+          if (proxyError) {
+            proxyError.textContent = 'Ambas URLs son obligatorias.';
+            proxyError.style.color = 'var(--error)';
+          }
+          return;
+        }
+        try {
+          const client = await proxyEnsureClient();
+          const slug = proxyGenerateSlug();
+          const { data, error } = await client
+            .from('url_configs')
+            .insert({
+              slug,
+              name: name || '',
+              redirect_url: redirectUrl,
+              post_url: postUrl,
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          if (proxyLabelInput) proxyLabelInput.value = '';
+          if (proxyRedirectUrlInput) proxyRedirectUrlInput.value = '';
+          if (proxyPostUrlInput) proxyPostUrlInput.value = '';
+          if (proxyStatus) {
+            proxyStatus.textContent = 'Proxy URL creada correctamente.';
+            proxyStatus.style.color = 'var(--accent)';
+          }
+          await proxyLoadConfigs();
+        } catch (e) {
+          if (proxyError) {
+            proxyError.textContent = 'Error al crear Proxy URL: ' + e.message;
+            proxyError.style.color = 'var(--error)';
+          }
+        }
+      });
+    }
+
+    // Intentar cargar config de Supabase desde .env (backend) al cargar la página
+    (async () => {
+      try {
+        const res = await fetch('/api/proxy/config');
+        if (!res.ok) {
+          if (proxyStatus) {
+            proxyStatus.textContent = 'Supabase no está configurado en .env. Completa los campos manualmente.';
+            proxyStatus.style.color = 'var(--error)';
+          }
+          return;
+        }
+        const data = await res.json();
+        if (!data.supabaseUrl || !data.supabaseAnonKey) return;
+        proxyEnvConfig = data;
+        // Ocultar por completo el bloque de credenciales y auto-conectar/cargar URLs
+        if (proxyCredsCard) {
+          proxyCredsCard.style.display = 'none';
+        }
+        await proxyEnsureClient();
+        await proxyLoadConfigs();
+      } catch (_) {
+        // Silencioso: si falla, el usuario puede introducir manualmente
+      }
+    })();
+
+    // Enviar mensaje usando una plantilla existente (Cloud API /{PHONE_NUMBER_ID}/messages)
+    if (waSendTemplateBtn) {
+      waSendTemplateBtn.addEventListener('click', async () => {
+        const token = waAccessToken && waAccessToken.value.trim();
+        const phoneNumberId = waPhoneNumberId && waPhoneNumberId.value.trim();
+        const toRaw = waSendTo && waSendTo.value.trim();
+        const templateName = waTemplateName && waTemplateName.value.trim();
+        const languageCode = (waTemplateLanguage && waTemplateLanguage.value) || 'es';
+
+        if (!token || !phoneNumberId) {
+          waSendResult.textContent = 'Debes ingresar Access Token y Phone Number ID.';
+          waSendResult.style.color = 'var(--error)';
+          return;
+        }
+        if (!toRaw) {
+          waSendResult.textContent = 'Debes ingresar el número de destino.';
+          waSendResult.style.color = 'var(--error)';
+          return;
+        }
+        if (!templateName) {
+          waSendResult.textContent = 'Debes indicar el nombre de la plantilla (arriba).';
+          waSendResult.style.color = 'var(--error)';
+          return;
+        }
+
+        // Normalizar destino: si no empieza con +, se lo añadimos
+        const to = toRaw.startsWith('+') ? toRaw : `+${toRaw.replace(/\\s+/g, '')}`;
+
+        const body = {
+          messaging_product: 'whatsapp',
+          to,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: { code: languageCode },
+          },
+        };
+
+        waSendTemplateBtn.disabled = true;
+        waSendResult.textContent = 'Enviando mensaje...';
+        waSendResult.style.color = '';
+
+        try {
+          const res = await fetch(META_GRAPH + '/' + encodeURIComponent(phoneNumberId) + '/messages', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+
+          // Según la documentación de Meta, una respuesta exitosa incluye un array "messages" con un ID.
+          if (res.ok && data.messages && Array.isArray(data.messages) && data.messages[0]?.id) {
+            waSendResult.textContent = 'Mensaje enviado. ID: ' + data.messages[0].id;
+            waSendResult.style.color = 'var(--accent)';
+          } else {
+            waSendResult.textContent = (data.error && data.error.message) || JSON.stringify(data);
+            waSendResult.style.color = 'var(--error)';
+          }
+        } catch (e) {
+          waSendResult.textContent = 'Error al enviar mensaje: ' + e.message;
+          waSendResult.style.color = 'var(--error)';
+        } finally {
+          waSendTemplateBtn.disabled = false;
+        }
       });
     }
 
@@ -2070,6 +2777,7 @@
       const compareModeCompare = document.getElementById('compareModeCompare');
       const compareModeDuplicates = document.getElementById('compareModeDuplicates');
       const compareModeSplit = document.getElementById('compareModeSplit');
+      const compareModeNoLlama = document.getElementById('compareModeNoLlama');
       const compareModeJson = document.getElementById('compareModeJson');
       const compareCsvContainer = document.getElementById('compareCsvContainer');
       const compareSecondListContainer = document.getElementById('compareSecondListContainer');
@@ -2089,7 +2797,7 @@
       const jsonConvertBtn = document.getElementById('jsonConvertBtn');
       const jsonErrorMsg = document.getElementById('jsonErrorMsg');
 
-      let compareMode = 'compare'; // 'compare' | 'duplicates' | 'split' | 'json'
+      let compareMode = 'compare'; // 'compare' | 'duplicates' | 'split' | 'json' | 'no-llama'
       let list1 = [];
       let list2 = [];
       let resultData = [];
@@ -2102,6 +2810,7 @@
         compareModeCompare.classList.remove('active');
         compareModeDuplicates.classList.remove('active');
         if (compareModeSplit) compareModeSplit.classList.remove('active');
+        if (compareModeNoLlama) compareModeNoLlama.classList.remove('active');
         compareModeJson.classList.remove('active');
 
         if (mode === 'compare') {
@@ -2125,6 +2834,13 @@
           compareJsonContainer.style.display = 'none';
           if (splitOptions) splitOptions.style.display = 'block';
           compareActionBtn.textContent = 'Dividir lista';
+        } else if (mode === 'no-llama') {
+          if (compareModeNoLlama) compareModeNoLlama.classList.add('active');
+          compareCsvContainer.style.display = 'block';
+          compareSecondListContainer.style.display = 'block';
+          compareJsonContainer.style.display = 'none';
+          if (splitOptions) splitOptions.style.display = 'block';
+          compareActionBtn.textContent = 'Borrar No Llama';
         } else if (mode === 'json') {
           compareModeJson.classList.add('active');
           compareCsvContainer.style.display = 'none';
@@ -2143,11 +2859,24 @@
       if (compareModeSplit) {
         compareModeSplit.addEventListener('click', () => setCompareMode('split'));
       }
+      if (compareModeNoLlama) {
+        compareModeNoLlama.addEventListener('click', () => setCompareMode('no-llama'));
+      }
       if (compareModeJson) {
         compareModeJson.addEventListener('click', () => setCompareMode('json'));
       }
 
       setCompareMode('compare');
+
+      function normalizeCsvCell(value) {
+        let v = value != null ? String(value).trim() : '';
+        // Si viene en formato CSV clásico con comillas externas, las quitamos
+        // y desescapamos comillas dobles internas.
+        if (v.length >= 2 && v.startsWith('"') && v.endsWith('"')) {
+          v = v.slice(1, -1).replace(/""/g, '"');
+        }
+        return v;
+      }
 
       function parseCsvFileToObjects(file) {
         return new Promise((resolve, reject) => {
@@ -2160,14 +2889,14 @@
                 resolve([]);
                 return;
               }
-              const header = lines[0].split(',').map((h) => h.trim());
+              const header = lines[0].split(',').map((h) => normalizeCsvCell(h));
               const rows = [];
               for (let i = 1; i < lines.length; i++) {
                 const cols = lines[i].split(',');
                 if (!cols.some((c) => c.trim())) continue;
                 const obj = {};
                 header.forEach((h, idx) => {
-                  obj[h] = (cols[idx] || '').trim();
+                  obj[h] = normalizeCsvCell(cols[idx] || '');
                 });
                 rows.push(obj);
               }
@@ -2360,6 +3089,69 @@
             renderTable(unique);
             compareResultsContainer.style.display = 'block';
             compareDownloadBtn.disabled = !unique.length;
+          } else if (compareMode === 'no-llama') {
+            if (!list1.length || !list2.length) {
+              alert('Debes cargar dos CSV primero.');
+              return;
+            }
+            const phoneKey1 = getPhoneKey(list1[0]);
+            const phoneKey2 = getPhoneKey(list2[0]);
+            const baseTotal = list1.length;
+            const noLlamaTotal = list2.length;
+            const noLlamaSet = new Set(
+              list2
+                .map((r) => String(r[phoneKey2] || '').trim())
+                .filter(Boolean)
+            );
+
+            const allowed = list1.filter((r) => {
+              const v = String(r[phoneKey1] || '').trim();
+              return v && !noLlamaSet.has(v);
+            });
+
+            const removed = baseTotal - allowed.length;
+
+            let parts = null;
+            let partsCount = 0;
+            if (splitPartsInput && splitPartsInput.value) {
+              partsCount = parseInt(splitPartsInput.value, 10);
+            }
+
+            if (partsCount && partsCount > 1) {
+              if (partsCount > allowed.length) {
+                alert('No puedes crear más partes que registros resultantes. Reduce el número de partes.');
+                return;
+              }
+              const total = allowed.length;
+              const baseSize = Math.floor(total / partsCount);
+              const remainder = total % partsCount;
+              parts = [];
+              let start = 0;
+              for (let i = 0; i < partsCount; i++) {
+                const size = baseSize + (i < remainder ? 1 : 0);
+                const end = start + size;
+                parts.push(allowed.slice(start, end));
+                start = end;
+              }
+            }
+
+            if (parts && parts.length) {
+              splitPartsData = parts;
+              resultData = allowed;
+              compareResultsTitle.textContent = 'Lista limpia dividida (sin números No Llama)';
+              compareSummaryText.textContent = `CSV base: ${baseTotal} filas. Lista No Llama: ${noLlamaTotal} filas. Eliminados: ${removed}. Restantes: ${allowed.length}. Partes generadas: ${parts.length}.`;
+              renderTable(parts[0] || []);
+              compareResultsContainer.style.display = 'block';
+              compareDownloadBtn.disabled = false;
+            } else {
+              splitPartsData = [];
+              resultData = allowed;
+              compareResultsTitle.textContent = 'Lista limpia (sin números No Llama)';
+              compareSummaryText.textContent = `CSV base: ${baseTotal} filas. Lista No Llama: ${noLlamaTotal} filas. Eliminados: ${removed}. Restantes: ${allowed.length}.`;
+              renderTable(allowed);
+              compareResultsContainer.style.display = 'block';
+              compareDownloadBtn.disabled = !allowed.length;
+            }
           } else if (compareMode === 'split') {
             if (!list1.length) {
               alert('Debes cargar un CSV primero.');
@@ -2400,18 +3192,28 @@
 
       if (compareDownloadBtn) {
         compareDownloadBtn.addEventListener('click', () => {
-          if (compareMode === 'split') {
+          if (compareMode === 'split' || (compareMode === 'no-llama' && splitPartsData && splitPartsData.length)) {
             if (!splitPartsData || !splitPartsData.length) return;
             splitPartsData.forEach((part, idx) => {
               if (!part.length) return;
               const csv = toCsv(part);
-              const filename = `split_part_${idx + 1}_of_${splitPartsData.length}.csv`;
+              const filename =
+                compareMode === 'split'
+                  ? `split_part_${idx + 1}_of_${splitPartsData.length}.csv`
+                  : `no_llama_part_${idx + 1}_of_${splitPartsData.length}.csv`;
               downloadCsv(csv, filename);
             });
           } else {
             if (!resultData || !resultData.length) return;
             const csv = toCsv(resultData);
-            const filename = compareMode === 'compare' ? 'registros_unicos.csv' : 'registros_deduplicados.csv';
+            let filename = 'resultados.csv';
+            if (compareMode === 'compare') {
+              filename = 'registros_unicos.csv';
+            } else if (compareMode === 'duplicates') {
+              filename = 'registros_deduplicados.csv';
+            } else if (compareMode === 'no-llama') {
+              filename = 'lista_sin_no_llama.csv';
+            }
             downloadCsv(csv, filename);
           }
         });
