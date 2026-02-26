@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Micro Tools</title>
   <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
 </head>
 <body>
   <aside class="sidebar">
@@ -16,6 +17,7 @@
       <button type="button" class="tab-btn" id="tabBatchCall">Batch Calling</button>
       <button type="button" class="tab-btn" id="tabManage">Gestionar Números</button>
       <button type="button" class="tab-btn" id="tabCompare">Comparar Listas / JSON</button>
+      <button type="button" class="tab-btn" id="tabWhatsAppTemplates">Plantillas WhatsApp</button>
       <a href="https://url-redirect-post-ge-rwgf.bolt.host" target="_blank" rel="noopener noreferrer" class="sidebar-link">ProxyLink</a>
     </nav>
   </aside>
@@ -142,91 +144,19 @@
     <h2 class="section-title">Batch Calling</h2>
     <p class="section-desc">Carga un CSV de contactos con columna phone_number, configura agente y opciones, y crea los batches en Retell AI agrupados por prefijo.</p>
 
-    <form id="batchCallForm">
-      <!-- Paso 1: Cargar CSV -->
-      <div class="form-group">
-        <label for="batchCallCsvFile">Archivo CSV con contactos *</label>
-        <input type="file" id="batchCallCsvFile" accept=".csv" required />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          El CSV debe tener una columna "phone_number" o "PhoneNumber". Todas las demás columnas se convertirán en variables personalizadas.
-        </small>
+    <div class="form-block" style="margin-bottom: 1.5rem;">
+      <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <label for="batchCallCount" style="margin: 0; font-weight: 500;">Cantidad de formularios</label>
+        <input type="number" id="batchCallCount" min="1" max="20" value="1" style="max-width: 5rem;" />
+        <button type="button" class="btn" id="batchCallDeployBtn">Desplegar formularios</button>
       </div>
+      <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+        Completa cada formulario con su CSV y datos, y ejecuta "Create Batches" en el que quieras.
+      </small>
+    </div>
 
-      <!-- Preview del CSV -->
-      <div id="batchCallPreview" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
-        <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem;">Preview del CSV (primeras 5 filas)</h3>
-        <div id="batchCallPreviewContent" style="font-size: 0.85rem; font-family: monospace; max-height: 200px; overflow-y: auto;"></div>
-      </div>
-
-      <!-- Paso 2: Configuración -->
-      <div class="form-group" style="margin-top: 1.5rem;">
-        <label for="batchCallAgentId">Agent ID (opcional)</label>
-        <input type="text" id="batchCallAgentId" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          El agente normalmente ya está asociado al número telefónico (from_number) en Retell AI. Si se especifica aquí, se usará como override para cada llamada.
-        </small>
-      </div>
-
-      <div class="form-group">
-        <label for="batchCallApiKey">API Key de Retell AI *</label>
-        <input type="password" id="batchCallApiKey" placeholder="Ingresa tu API Key" required />
-      </div>
-
-      <div class="form-group">
-        <label for="batchCallFromNumber">Número origen (from_number)</label>
-        <select id="batchCallFromNumber">
-          <option value="">Selecciona un número disponible</option>
-        </select>
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Se llena automáticamente usando tu API Key con los números disponibles en tu cuenta Retell.
-        </small>
-      </div>
-
-      <div class="form-group">
-        <label for="batchCallBatchName">Batch Name (opcional)</label>
-        <input type="text" id="batchCallBatchName" placeholder="Auto-generate based on country" />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Si no se especifica, se generará automáticamente basado en el país/prefijo (ej: "Batch - Colombia 1")
-        </small>
-      </div>
-
-      <div class="form-group">
-        <label for="batchCallStartTime">Start Time (opcional)</label>
-        <input type="datetime-local" id="batchCallStartTime" />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Si no se especifica, el batch se enviará inmediatamente. Si se especifica, se programará para esa fecha/hora.
-        </small>
-      </div>
-
-      <div class="form-group">
-        <label for="batchCallReservedConcurrency">Reserved Concurrency (opcional)</label>
-        <input type="number" id="batchCallReservedConcurrency" min="0" max="100" value="0" />
-        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
-          Número de concurrencia reservada para otras llamadas que no son batch calls (como llamadas entrantes). Si se omite, se usa 0.
-        </small>
-      </div>
-
-      <!-- Resumen antes de crear -->
-      <div id="batchCallSummary" style="display: none; margin-top: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
-        <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem;">Resumen</h3>
-        <div id="batchCallSummaryContent"></div>
-      </div>
-
-      <!-- Progress -->
-      <div class="progress" id="batchCallProgress" style="margin-top: 1rem;">
-        <div class="progress-bar">
-          <div class="progress-fill" id="batchCallProgressFill"></div>
-        </div>
-        <div class="progress-text" id="batchCallProgressText">0 / 0</div>
-      </div>
-
-      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-        <button type="button" class="btn btn-secondary" id="batchCallCancelBtn" style="flex: 1;">Cancelar</button>
-        <button type="submit" class="btn" id="batchCallSubmitBtn" style="flex: 2;">Create Batches</button>
-      </div>
-
-      <div id="batchCallMsg" style="margin-top: 1rem;"></div>
-    </form>
+    <!-- Contenedor donde se despliegan N formularios completos -->
+    <div id="batchCallSlotsContainer"></div>
   </div>
 
   <!-- Sección de Gestionar Números -->
@@ -459,6 +389,213 @@
         <button type="submit" class="btn" id="importSubmitBtn">Importar Números</button>
         <div id="importMsg"></div>
       </form>
+    </div>
+  </div>
+
+  <!-- Sección Plantillas Meta / WhatsApp (rediseño V1) -->
+  <div class="card card-large wa-section-full" id="whatsAppTemplatesSection" style="display: none;">
+    <div class="wa-layout">
+      <!-- Columna formulario -->
+      <section class="wa-form-column">
+        <div class="wa-page-header">
+          <h2 class="wa-title">Plantillas de mensaje Meta / WhatsApp</h2>
+          <p class="wa-subtitle">Crea plantillas para WhatsApp Business (Graph API). Valida el JSON, previsualiza cómo se verá en WhatsApp y obtén el ID para verificar si Meta la aprobó.</p>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card-header">
+            <span class="material-icons-outlined wa-card-icon">vpn_key</span>
+            <span>Credenciales Meta</span>
+          </div>
+          <div class="wa-grid-2">
+            <div class="wa-field">
+              <label class="wa-label" for="waWabaId">WABA ID (WhatsApp Business Account ID) *</label>
+              <input type="text" id="waWabaId" class="wa-input" placeholder="1911774739699629" />
+            </div>
+            <div class="wa-field">
+              <label class="wa-label" for="waAccessToken">Access Token *</label>
+              <input type="password" id="waAccessToken" class="wa-input" placeholder="Bearer token de Meta" />
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card-header">
+            <span class="material-icons-outlined wa-card-icon">settings</span>
+            <span>Configuración de Plantilla</span>
+          </div>
+          <div class="wa-fields">
+            <div class="wa-field">
+              <label class="wa-label" for="waTemplateName">Nombre de la plantilla *</label>
+              <input type="text" id="waTemplateName" class="wa-input" placeholder="ej: 20h_p15_v4" maxlength="512" />
+              <p class="wa-hint">Solo minúsculas, números y guión bajo (_). Sin espacios.</p>
+            </div>
+            <div class="wa-grid-2">
+              <div class="wa-field">
+                <label class="wa-label" for="waTemplateLanguage">Idioma *</label>
+                <select id="waTemplateLanguage" class="wa-input">
+                  <option value="es">Español (es)</option>
+                  <option value="en">English (en)</option>
+                  <option value="en_US">English US</option>
+                  <option value="pt_BR">Português Brasil</option>
+                  <option value="es_AR">Español Argentina</option>
+                  <option value="es_MX">Español México</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="it">Italiano</option>
+                </select>
+              </div>
+              <div class="wa-field">
+                <label class="wa-label" for="waTemplateCategory">Categoría *</label>
+                <select id="waTemplateCategory" class="wa-input">
+                  <option value="MARKETING">MARKETING</option>
+                  <option value="UTILITY">UTILITY</option>
+                  <option value="AUTHENTICATION">AUTHENTICATION</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card-header wa-card-header-between">
+            <div class="wa-card-header">
+              <span class="material-icons-outlined wa-card-icon">short_text</span>
+              <span>Contenido del Mensaje</span>
+            </div>
+            <button type="button" class="wa-btn-insert-var" id="waInsertVar1" title="Insertar variable">Variable {{1}}</button>
+          </div>
+          <div class="wa-field">
+            <label class="wa-label" for="waTemplateBody">Texto del mensaje *</label>
+            <textarea id="waTemplateBody" class="wa-textarea" rows="6" placeholder="¡Hola {{1}}! Te escribimos para recordarte tu cita..."></textarea>
+            <p class="wa-hint">Máx. 1024 caracteres. Variables: {{1}}, {{2}} o {{nombre}}. Saltos de línea permitidos.</p>
+            <div id="waBodyValidation" class="wa-validation"></div>
+          </div>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card-header">
+            <span class="material-icons-outlined wa-card-icon">smart_button</span>
+            <span>Botones Interactivos</span>
+          </div>
+          <div class="wa-buttons-rows">
+            <div class="wa-button-row">
+              <div class="wa-button-cell wa-button-type">
+                <label class="wa-label-small">Tipo</label>
+                <select class="wa-input wa-btn-type" data-btn="0">
+                  <option value="">— Sin botón —</option>
+                  <option value="URL">Visit Website</option>
+                  <option value="QUICK_REPLY">Quick Reply</option>
+                </select>
+              </div>
+              <div class="wa-button-cell">
+                <label class="wa-label-small">Texto</label>
+                <input type="text" class="wa-input wa-btn-text" data-btn="0" placeholder="Ver oferta" />
+              </div>
+              <div class="wa-button-cell wa-button-url">
+                <label class="wa-label-small">URL</label>
+                <input type="url" class="wa-input wa-btn-url" data-btn="0" placeholder="https://miweb.com" />
+              </div>
+            </div>
+            <div class="wa-button-row">
+              <div class="wa-button-cell wa-button-type">
+                <label class="wa-label-small">Tipo</label>
+                <select class="wa-input wa-btn-type" data-btn="1">
+                  <option value="">— Sin botón —</option>
+                  <option value="URL">Visit Website</option>
+                  <option value="QUICK_REPLY">Quick Reply</option>
+                </select>
+              </div>
+              <div class="wa-button-cell">
+                <label class="wa-label-small">Texto</label>
+                <input type="text" class="wa-input wa-btn-text" data-btn="1" placeholder="Texto del botón" />
+              </div>
+              <div class="wa-button-cell wa-button-url">
+                <label class="wa-label-small">URL</label>
+                <input type="url" class="wa-input wa-btn-url" data-btn="1" placeholder="https://..." />
+              </div>
+            </div>
+            <div class="wa-button-row">
+              <div class="wa-button-cell wa-button-type">
+                <label class="wa-label-small">Tipo</label>
+                <select class="wa-input wa-btn-type" data-btn="2">
+                  <option value="">— Sin botón —</option>
+                  <option value="URL">Visit Website</option>
+                  <option value="QUICK_REPLY">Quick Reply</option>
+                </select>
+              </div>
+              <div class="wa-button-cell">
+                <label class="wa-label-small">Texto</label>
+                <input type="text" class="wa-input wa-btn-text" data-btn="2" placeholder="Texto del botón" />
+              </div>
+              <div class="wa-button-cell wa-button-url">
+                <label class="wa-label-small">URL</label>
+                <input type="url" class="wa-input wa-btn-url" data-btn="2" placeholder="https://..." />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-actions">
+          <button type="button" class="wa-btn wa-btn-primary" id="waCreateTemplateBtn">Crear Plantilla</button>
+          <div id="waTemplateMsg" class="wa-msg"></div>
+          <div id="waTemplateIdResult" class="wa-id-result" style="display: none;">
+            <strong>ID de plantilla:</strong> <code id="waTemplateIdValue"></code>
+            <p class="wa-id-hint">Usa este ID para verificar si Meta la aprobó.</p>
+          </div>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card-header">
+            <span class="material-icons-outlined wa-card-icon">info</span>
+            <span>Verificar estado de una plantilla</span>
+          </div>
+          <div class="wa-field">
+            <label class="wa-label" for="waVerifyTemplateId">ID de plantilla</label>
+            <input type="text" id="waVerifyTemplateId" class="wa-input" placeholder="1212760374170689" />
+          </div>
+          <button type="button" class="wa-btn wa-btn-primary" id="waVerifyBtn">Verificar estado</button>
+          <div id="waVerifyResult" class="wa-verify-result"></div>
+        </div>
+      </section>
+
+      <!-- Columna preview (mockup WhatsApp) -->
+      <aside class="wa-preview-column">
+        <div class="wa-preview-pattern"></div>
+        <div class="wa-preview-inner">
+          <div class="wa-preview-header">
+            <span class="material-icons-outlined">visibility</span>
+            <span>Previsualización en Tiempo Real</span>
+          </div>
+          <div class="wa-phone-mockup">
+            <div class="wa-phone-header">
+              <span class="material-icons-outlined">arrow_back</span>
+              <div class="wa-phone-avatar"></div>
+              <div class="wa-phone-contact">
+                <span class="wa-phone-name">uMindsAI</span>
+                <span class="wa-phone-status">En línea</span>
+              </div>
+              <span class="material-icons-outlined wa-phone-icon">videocam</span>
+              <span class="material-icons-outlined wa-phone-icon">call</span>
+              <span class="material-icons-outlined wa-phone-icon">more_vert</span>
+            </div>
+            <div class="wa-phone-chat">
+              <div class="wa-phone-date">Hoy</div>
+              <div class="wa-phone-bubble-wrap">
+                <div id="waPreviewBubble" class="wa-phone-bubble"></div>
+                <div id="waPreviewButtons" class="wa-phone-buttons"></div>
+              </div>
+            </div>
+            <div class="wa-phone-footer">
+              <span class="material-icons-outlined">sentiment_satisfied_alt</span>
+              <span class="material-icons-outlined">attach_file</span>
+              <div class="wa-phone-input"></div>
+              <div class="wa-phone-send"><span class="material-icons-outlined">mic</span></div>
+            </div>
+          </div>
+          <p class="wa-preview-note">Los campos dinámicos se mostrarán como texto real en el dispositivo del destinatario.</p>
+        </div>
+      </aside>
     </div>
   </div>
 
@@ -811,12 +948,14 @@
     const batchCallSection = document.getElementById('batchCallSection');
     const manageSection = document.getElementById('manageSection');
     const compareSection = document.getElementById('compareSection');
+    const whatsAppTemplatesSection = document.getElementById('whatsAppTemplatesSection');
 
     const tabProcess = document.getElementById('tabProcess');
     const tabImport = document.getElementById('tabImport');
     const tabBatchCall = document.getElementById('tabBatchCall');
     const tabManage = document.getElementById('tabManage');
     const tabCompare = document.getElementById('tabCompare');
+    const tabWhatsAppTemplates = document.getElementById('tabWhatsAppTemplates');
 
     const directImportForm = document.getElementById('directImportForm');
     const directNumberSource = document.getElementById('directNumberSource');
@@ -839,6 +978,7 @@
       batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
       compareSection.style.display = 'none';
+      if (whatsAppTemplatesSection) whatsAppTemplatesSection.style.display = 'none';
 
       // Reset clases de tabs
       tabProcess.classList.remove('active');
@@ -846,6 +986,7 @@
       tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
       tabCompare.classList.remove('active');
+      if (tabWhatsAppTemplates) tabWhatsAppTemplates.classList.remove('active');
 
       let path = '/procesar-csv';
 
@@ -869,6 +1010,10 @@
         compareSection.style.display = 'block';
         tabCompare.classList.add('active');
         path = '/comparar-listas';
+      } else if (tab === 'whatsapp') {
+        if (whatsAppTemplatesSection) whatsAppTemplatesSection.style.display = 'block';
+        if (tabWhatsAppTemplates) tabWhatsAppTemplates.classList.add('active');
+        path = '/plantillas-whatsapp';
       }
 
       // Actualizar URL sin recargar la página
@@ -895,6 +1040,9 @@
         setActiveTab('compare');
       });
     }
+    if (tabWhatsAppTemplates) {
+      tabWhatsAppTemplates.addEventListener('click', () => setActiveTab('whatsapp'));
+    }
 
     // Seleccionar pestaña inicial según la URL
     function initTabFromPath() {
@@ -909,6 +1057,8 @@
         setActiveTab('manage');
       } else if (path === '/comparar-listas') {
         setActiveTab('compare');
+      } else if (path === '/plantillas-whatsapp') {
+        setActiveTab('whatsapp');
       } else {
         // Cualquier otra ruta desconocida cae en Procesar CSV
         setActiveTab('process');
@@ -1104,223 +1254,470 @@
     });
 
     // ===== SECCIÓN DE BATCH CALLING =====
-    const batchCallForm = document.getElementById('batchCallForm');
-    const batchCallCsvFile = document.getElementById('batchCallCsvFile');
-    const batchCallPreview = document.getElementById('batchCallPreview');
-    const batchCallPreviewContent = document.getElementById('batchCallPreviewContent');
-    const batchCallSummary = document.getElementById('batchCallSummary');
-    const batchCallSummaryContent = document.getElementById('batchCallSummaryContent');
-    const batchCallProgress = document.getElementById('batchCallProgress');
-    const batchCallProgressFill = document.getElementById('batchCallProgressFill');
-    const batchCallProgressText = document.getElementById('batchCallProgressText');
-    const batchCallSubmitBtn = document.getElementById('batchCallSubmitBtn');
-    const batchCallCancelBtn = document.getElementById('batchCallCancelBtn');
-    const batchCallMsg = document.getElementById('batchCallMsg');
-    const batchCallApiKeyInput = document.getElementById('batchCallApiKey');
-    const batchCallFromNumberSelect = document.getElementById('batchCallFromNumber');
-
-    let batchCallCsvData = null;
-    let batchCallGeneratedNumbers = null;
+    const batchCallCountInput = document.getElementById('batchCallCount');
+    const batchCallDeployBtn = document.getElementById('batchCallDeployBtn');
+    const batchCallSlotsContainer = document.getElementById('batchCallSlotsContainer');
 
     // Navegación a Batch Calling
     tabBatchCall.addEventListener('click', () => {
       setActiveTab('batch');
     });
 
-    // Preview del CSV cuando se selecciona
-    batchCallCsvFile.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    // Devuelve el HTML de un formulario completo para un slot (Batch Call #n)
+    function getBatchSlotFormHTML(slotNum) {
+      return `
+        <div class="batch-call-slot" style="margin-bottom: 2rem; padding: 1.25rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;">
+          <h3 style="font-size: 1.1rem; margin: 0 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);">Batch Call #${slotNum}</h3>
+          <div class="form-group">
+            <label>Archivo CSV con contactos *</label>
+            <div class="zone batch-slot-zone" style="padding: 1rem;">
+              <input type="file" class="batch-slot-csv" accept=".csv" />
+              <p>Arrastra aquí un CSV o haz clic para elegir</p>
+              <p class="file-name batch-slot-file-name"></p>
+            </div>
+            <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">Columna "phone_number" o "PhoneNumber". Otras columnas = variables.</small>
+          </div>
+          <div class="batch-slot-preview" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border);">
+            <h4 style="font-size: 0.95rem; margin: 0 0 0.5rem 0;">Preview del CSV</h4>
+            <div class="batch-slot-preview-content" style="font-size: 0.85rem; font-family: monospace; max-height: 180px; overflow-y: auto;"></div>
+          </div>
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Agent ID (opcional)</label>
+            <input type="text" class="batch-slot-agent-id" placeholder="agent_5c8cb6c7ba9eeff5857d7bdf1b" value="agent_5c8cb6c7ba9eeff5857d7bdf1b" />
+          </div>
+          <div class="form-group">
+            <label>API Key de Retell AI *</label>
+            <input type="password" class="batch-slot-api-key" placeholder="Ingresa tu API Key" />
+          </div>
+          <div class="form-group">
+            <label>Número origen (from_number)</label>
+            <select class="batch-slot-from-number">
+              <option value="">Selecciona un número disponible</option>
+            </select>
+            <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">Se llena al ingresar API Key (blur).</small>
+          </div>
+          <div class="form-group">
+            <label>Batch Name (opcional)</label>
+            <input type="text" class="batch-slot-batch-name" placeholder="Auto-generate based on country" />
+          </div>
+          <div class="form-group">
+            <label>Start Time (opcional)</label>
+            <input type="datetime-local" class="batch-slot-start-time" />
+          </div>
+          <div class="form-group">
+            <label>Reserved Concurrency (opcional)</label>
+            <input type="number" class="batch-slot-reserved-concurrency" min="0" max="100" value="0" />
+          </div>
+          <div class="progress batch-slot-progress" style="margin-top: 1rem; display: none;">
+            <div class="progress-bar"><div class="progress-fill" style="width: 0%;"></div></div>
+            <div class="progress-text">0 / 0</div>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+            <button type="button" class="btn batch-slot-submit-btn">Create Batches</button>
+          </div>
+          <div class="batch-slot-msg" style="margin-top: 0.75rem; font-size: 0.9rem;"></div>
+        </div>
+      `;
+    }
 
-      batchCallMsg.textContent = 'Validando CSV...';
-      batchCallMsg.className = 'msg';
+    // Desplegar N formularios completos
+    batchCallDeployBtn.addEventListener('click', () => {
+      const n = Math.max(1, Math.min(20, parseInt(batchCallCountInput.value, 10) || 1));
+      batchCallCountInput.value = n;
+      batchCallSlotsContainer.innerHTML = '';
 
-      try {
-        const text = await file.text();
-        batchCallCsvData = text;
+      for (let i = 0; i < n; i++) {
+        const slotNum = i + 1;
+        const wrap = document.createElement('div');
+        wrap.innerHTML = getBatchSlotFormHTML(slotNum);
+        const card = wrap.firstElementChild;
+        batchCallSlotsContainer.appendChild(card);
 
-        // Validar y mostrar preview
-        const response = await fetch(API + '/api/retell/validate-batch-csv', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ csvContent: text }),
+        // Estado por slot
+        card._csvData = null;
+        card._generatedNumbers = null;
+
+        const zoneEl = card.querySelector('.batch-slot-zone');
+        const csvInput = card.querySelector('.batch-slot-csv');
+        const fileNameEl = card.querySelector('.batch-slot-file-name');
+        const previewEl = card.querySelector('.batch-slot-preview');
+        const previewContent = card.querySelector('.batch-slot-preview-content');
+        const apiKeyInput = card.querySelector('.batch-slot-api-key');
+        const fromNumberSelect = card.querySelector('.batch-slot-from-number');
+        const msgEl = card.querySelector('.batch-slot-msg');
+        const progressEl = card.querySelector('.batch-slot-progress');
+        const progressFill = card.querySelector('.progress-fill');
+        const progressText = card.querySelector('.progress-text');
+        const submitBtn = card.querySelector('.batch-slot-submit-btn');
+        // Procesar archivo CSV (validar + preview + nombre). Usado por change y por drop.
+        async function processBatchSlotFile(file) {
+          if (!file || !/\.csv$/i.test(file.name)) return;
+          fileNameEl.textContent = file.name;
+          msgEl.textContent = 'Validando CSV...';
+          msgEl.className = 'msg';
+          try {
+            const text = await file.text();
+            card._csvData = text;
+            const response = await fetch(API + '/api/retell/validate-batch-csv', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ csvContent: text }),
+            });
+            const result = await response.json();
+            if (result.success && result.preview && result.preview.length > 0) {
+              const allKeys = new Set();
+              result.preview.forEach(row => { Object.keys(row).forEach(k => allKeys.add(k)); });
+              const headers = Array.from(allKeys);
+              let html = '<table style="width:100%;font-size:0.8rem;border-collapse:collapse;"><thead><tr>';
+              headers.forEach(h => { html += `<th style="padding:0.4rem;text-align:left;border-bottom:1px solid var(--border);background:var(--bg);">${h}</th>`; });
+              html += '</tr></thead><tbody>';
+              result.preview.forEach(row => {
+                html += '<tr>';
+                headers.forEach(h => {
+                  const v = row[h] || '';
+                  html += `<td style="padding:0.4rem;border-bottom:1px solid var(--border);">${String(v).substring(0, 25)}${String(v).length > 25 ? '...' : ''}</td>`;
+                });
+                html += '</tr>';
+              });
+              html += `</tbody></table><p style="margin-top:0.5rem;color:var(--muted);font-size:0.8rem;">Total: ${result.total} contactos</p>`;
+              previewContent.innerHTML = html;
+              previewEl.style.display = 'block';
+              msgEl.textContent = 'CSV válido: ' + result.total + ' contactos';
+              msgEl.className = 'msg ok';
+            } else {
+              msgEl.textContent = result.error || 'Error al validar CSV';
+              msgEl.className = 'msg error';
+              previewEl.style.display = 'none';
+            }
+          } catch (err) {
+            msgEl.textContent = 'Error: ' + err.message;
+            msgEl.className = 'msg error';
+            previewEl.style.display = 'none';
+          }
+        }
+
+        // Zona: clic abre el selector de archivos
+        zoneEl.addEventListener('click', () => csvInput.click());
+        zoneEl.addEventListener('dragover', (e) => { e.preventDefault(); zoneEl.classList.add('dragover'); });
+        zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('dragover'));
+        zoneEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zoneEl.classList.remove('dragover');
+          const f = e.dataTransfer?.files?.[0];
+          if (f) processBatchSlotFile(f);
+        });
+        csvInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) processBatchSlotFile(file);
         });
 
-        const result = await response.json();
-
-        if (result.success && result.preview && result.preview.length > 0) {
-          // Mostrar preview
-          let previewHTML = '<table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;"><thead><tr>';
-          
-          // Obtener todas las claves únicas de todas las filas
-          const allKeys = new Set();
-          result.preview.forEach(row => {
-            Object.keys(row).forEach(k => allKeys.add(k));
-          });
-          const headers = Array.from(allKeys);
-          
-          headers.forEach(h => {
-            previewHTML += `<th style="padding: 0.5rem; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg);">${h}</th>`;
-          });
-          previewHTML += '</tr></thead><tbody>';
-
-          result.preview.forEach(row => {
-            previewHTML += '<tr>';
-            headers.forEach(h => {
-              const value = row[h] || '';
-              previewHTML += `<td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">${String(value).substring(0, 30)}${String(value).length > 30 ? '...' : ''}</td>`;
-            });
-            previewHTML += '</tr>';
-          });
-          previewHTML += '</tbody></table>';
-          previewHTML += `<p style="margin-top: 0.5rem; color: var(--muted); font-size: 0.8rem;">Total: ${result.total} contactos válidos</p>`;
-
-          batchCallPreviewContent.innerHTML = previewHTML;
-          batchCallPreview.style.display = 'block';
-          batchCallMsg.textContent = `CSV válido: ${result.total} contactos encontrados`;
-          batchCallMsg.className = 'msg ok';
-        } else {
-          batchCallMsg.textContent = result.error || 'Error al validar el CSV';
-          batchCallMsg.className = 'msg error';
-          batchCallPreview.style.display = 'none';
-        }
-      } catch (error) {
-        batchCallMsg.textContent = 'Error al leer el archivo: ' + error.message;
-        batchCallMsg.className = 'msg error';
-        batchCallPreview.style.display = 'none';
-      }
-    });
-
-    // Cargar números generados cuando se ingresa API Key
-    if (batchCallApiKeyInput) {
-      batchCallApiKeyInput.addEventListener('blur', async () => {
-        const apiKey = batchCallApiKeyInput.value.trim();
-        if (apiKey) {
+        // API Key blur: cargar números
+        apiKeyInput.addEventListener('blur', async () => {
+          const apiKey = apiKeyInput.value.trim();
+          if (!apiKey) return;
           try {
             const response = await fetch(API + '/api/retell/list?apiKey=' + encodeURIComponent(apiKey));
             const result = await response.json();
-            if (result.success) {
-              batchCallGeneratedNumbers = result.phoneNumbers || [];
-              if (batchCallGeneratedNumbers.length > 0) {
-                batchCallMsg.textContent = `${batchCallGeneratedNumbers.length} números telefónicos disponibles`;
-                batchCallMsg.className = 'msg ok';
-                if (batchCallFromNumberSelect) {
-                  batchCallFromNumberSelect.innerHTML = '<option value=\"\">Selecciona un número disponible</option>';
-                  batchCallGeneratedNumbers.forEach((phone) => {
-                    const numRaw = phone.phone_number || phone.from_number || phone.number || phone;
-                    if (!numRaw) return;
-                    const num = String(numRaw).startsWith('+') ? String(numRaw) : `+${numRaw}`;
-                    const label = phone.nickname ? `${num} — ${phone.nickname}` : num;
-                    const opt = document.createElement('option');
-                    opt.value = num;
-                    opt.textContent = label;
-                    batchCallFromNumberSelect.appendChild(opt);
-                  });
-                }
-              }
+            if (result.success && result.phoneNumbers && result.phoneNumbers.length > 0) {
+              card._generatedNumbers = result.phoneNumbers;
+              fromNumberSelect.innerHTML = '<option value="">Selecciona un número disponible</option>';
+              result.phoneNumbers.forEach((phone) => {
+                const numRaw = phone.phone_number || phone.from_number || phone.number || phone;
+                if (!numRaw) return;
+                const num = String(numRaw).startsWith('+') ? String(numRaw) : '+' + numRaw;
+                const label = phone.nickname ? num + ' — ' + phone.nickname : num;
+                const opt = document.createElement('option');
+                opt.value = num;
+                opt.textContent = label;
+                fromNumberSelect.appendChild(opt);
+              });
             }
-          } catch (error) {
-            console.error('Error al cargar números:', error);
+          } catch (err) { console.error(err); }
+        });
+
+        // Create Batches: enviar con los datos de este slot
+        submitBtn.addEventListener('click', async () => {
+          if (!card._csvData) {
+            msgEl.textContent = 'Carga un CSV en este formulario antes de crear batches.';
+            msgEl.className = 'msg error';
+            return;
           }
+          const agentId = card.querySelector('.batch-slot-agent-id').value.trim();
+          const batchName = card.querySelector('.batch-slot-batch-name').value.trim();
+          const startTime = card.querySelector('.batch-slot-start-time').value;
+          const reservedConcurrency = card.querySelector('.batch-slot-reserved-concurrency').value;
+          const body = {
+            apiKey: apiKeyInput.value,
+            csvContent: card._csvData,
+          };
+          if (agentId) body.agent_id = agentId;
+          if (batchName) body.batch_name = batchName;
+          if (startTime) body.start_time = new Date(startTime).toISOString();
+          if (reservedConcurrency) body.reserved_concurrency = reservedConcurrency;
+          if (card._generatedNumbers && card._generatedNumbers.length > 0) body.generatedNumbers = card._generatedNumbers;
+          if (fromNumberSelect.value) body.from_number = fromNumberSelect.value;
+
+          submitBtn.disabled = true;
+          msgEl.textContent = '';
+          msgEl.className = '';
+          progressEl.style.display = 'block';
+          progressFill.style.width = '0%';
+          progressText.textContent = 'Creando batches...';
+
+          try {
+            const response = await fetch(API + '/api/retell/create-batch-call', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            const result = await response.json();
+            if (result.success) {
+              progressFill.style.width = '100%';
+              progressText.textContent = 'Completado';
+              let html = '<div class="msg ok"><strong>Batches creados:</strong> ' + result.batches_created + '<br>Contactos: ' + result.total_contacts + '<br>';
+              (result.results || []).forEach((r, idx) => {
+                html += (idx + 1) + '. ' + (r.batch_name || r.from_number) + ': ' + r.total_calls + ' contactos (ID: ' + r.batch_call_id + ')<br>';
+              });
+              html += '</div>';
+              msgEl.innerHTML = html;
+            } else {
+              msgEl.textContent = result.error || 'Error al crear batches';
+              msgEl.className = 'msg error';
+            }
+          } catch (err) {
+            msgEl.textContent = 'Error: ' + err.message;
+            msgEl.className = 'msg error';
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      }
+
+      // Botón para limpiar y volver a elegir cantidad
+      const cancelRow = document.createElement('div');
+      cancelRow.style.marginTop = '1rem';
+      cancelRow.innerHTML = '<button type="button" class="btn btn-secondary" id="batchCallSlotsCancelBtn">Limpiar y desplegar de nuevo</button>';
+      batchCallSlotsContainer.appendChild(cancelRow);
+      cancelRow.querySelector('#batchCallSlotsCancelBtn').addEventListener('click', () => {
+        batchCallSlotsContainer.innerHTML = '';
+      });
+    });
+
+    // ===== SECCIÓN PLANTILLAS WHATSAPP (META) =====
+    const META_GRAPH = 'https://graph.facebook.com/v21.0';
+    const waWabaId = document.getElementById('waWabaId');
+    const waAccessToken = document.getElementById('waAccessToken');
+    const waTemplateName = document.getElementById('waTemplateName');
+    const waTemplateLanguage = document.getElementById('waTemplateLanguage');
+    const waTemplateCategory = document.getElementById('waTemplateCategory');
+    const waTemplateBody = document.getElementById('waTemplateBody');
+    const waBodyValidation = document.getElementById('waBodyValidation');
+    const waPreviewBubble = document.getElementById('waPreviewBubble');
+    const waPreviewButtons = document.getElementById('waPreviewButtons');
+    const waCreateTemplateBtn = document.getElementById('waCreateTemplateBtn');
+    const waTemplateMsg = document.getElementById('waTemplateMsg');
+    const waTemplateIdResult = document.getElementById('waTemplateIdResult');
+    const waTemplateIdValue = document.getElementById('waTemplateIdValue');
+    const waVerifyTemplateId = document.getElementById('waVerifyTemplateId');
+    const waVerifyBtn = document.getElementById('waVerifyBtn');
+    const waVerifyResult = document.getElementById('waVerifyResult');
+
+    // Validación: nombre solo minúsculas, números y _
+    function waValidateName(name) {
+      if (!name || !name.trim()) return { ok: false, msg: 'El nombre es obligatorio.' };
+      const n = name.trim();
+      if (!/^[a-z0-9_]+$/.test(n)) return { ok: false, msg: 'Solo minúsculas, números y guión bajo (_). Sin espacios ni caracteres especiales.' };
+      if (n.length > 512) return { ok: false, msg: 'Máximo 512 caracteres.' };
+      return { ok: true, value: n };
+    }
+    // Validación: cuerpo máx 1024, variables {{1}}..{{n}} o {{nombre}}
+    function waValidateBody(text) {
+      if (!text || !text.trim()) return { ok: false, msg: 'El cuerpo (BODY) es obligatorio.' };
+      const t = text.trim();
+      if (t.length > 1024) return { ok: false, msg: 'Máximo 1024 caracteres en el cuerpo.' };
+      const badVar = t.match(/\{\{[^}\s]+\}\}/g);
+      if (badVar && badVar.some(v => !/^\{\{[a-zA-Z0-9_]+\}\}$/.test(v))) return { ok: false, msg: 'Variables deben ser {{1}}, {{2}} o {{nombre_valido}}.' };
+      return { ok: true, value: t };
+    }
+
+    function waUpdatePreview() {
+      if (!waTemplateBody || !waPreviewBubble) return;
+      const text = waTemplateBody.value.trim() || 'El mensaje se verá aquí...';
+      waPreviewBubble.textContent = text;
+      if (!waPreviewButtons) return;
+      waPreviewButtons.innerHTML = '';
+      document.querySelectorAll('.wa-btn-type').forEach((sel, i) => {
+        const type = sel.value;
+        const textInp = document.querySelector('.wa-btn-text[data-btn="' + i + '"]');
+        const urlInp = document.querySelector('.wa-btn-url[data-btn="' + i + '"]');
+        if (type === 'QUICK_REPLY' && textInp && textInp.value.trim()) {
+          const b = document.createElement('div');
+          b.style.cssText = 'background: rgba(255,255,255,.12); color: #e9edef; padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;';
+          b.textContent = textInp.value.trim();
+          waPreviewButtons.appendChild(b);
+        }
+        if (type === 'URL' && textInp && textInp.value.trim()) {
+          const b = document.createElement('div');
+          b.style.cssText = 'background: rgba(255,255,255,.12); color: #53bdeb; padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;';
+          b.textContent = (urlInp && urlInp.value.trim()) ? textInp.value.trim() + ' 🔗' : textInp.value.trim();
+          waPreviewButtons.appendChild(b);
         }
       });
     }
 
-    // Formulario de Batch Call
-    batchCallForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    if (waTemplateBody) {
+      waTemplateBody.addEventListener('input', () => {
+        waUpdatePreview();
+        const r = waValidateBody(waTemplateBody.value);
+        if (waBodyValidation) waBodyValidation.textContent = r.ok ? '' : r.msg;
+        if (waBodyValidation) waBodyValidation.style.color = r.ok ? '' : 'var(--error)';
+      });
+    }
 
-      if (!batchCallCsvData) {
-        batchCallMsg.textContent = 'Error: Debes seleccionar un archivo CSV';
-        batchCallMsg.className = 'msg error';
-        return;
-      }
-
-      const agentId = document.getElementById('batchCallAgentId').value.trim();
-      const batchName = document.getElementById('batchCallBatchName').value.trim();
-      const startTime = document.getElementById('batchCallStartTime').value;
-      const reservedConcurrency = document.getElementById('batchCallReservedConcurrency').value;
-
-      const body = {
-        apiKey: batchCallApiKeyInput.value,
-        csvContent: batchCallCsvData,
-      };
-      if (agentId) body.agent_id = agentId;
-      if (batchName) body.batch_name = batchName;
-      if (startTime) body.start_time = new Date(startTime).toISOString();
-      if (reservedConcurrency) body.reserved_concurrency = reservedConcurrency;
-      if (batchCallGeneratedNumbers && batchCallGeneratedNumbers.length > 0) {
-        body.generatedNumbers = batchCallGeneratedNumbers;
-      }
-      if (batchCallFromNumberSelect && batchCallFromNumberSelect.value) {
-        body.from_number = batchCallFromNumberSelect.value;
-      }
-
-      batchCallSubmitBtn.disabled = true;
-      batchCallMsg.textContent = '';
-      batchCallProgress.classList.add('active');
-      batchCallProgressFill.style.width = '0%';
-      batchCallProgressText.textContent = 'Creando batches...';
-
-      try {
-        const response = await fetch(API + '/api/retell/create-batch-call', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          batchCallProgressFill.style.width = '100%';
-          batchCallProgressText.textContent = 'Completado';
-
-          let msgHTML = `<div class="msg ok">`;
-          msgHTML += `<strong>Batches creados exitosamente:</strong><br>`;
-          msgHTML += `Total contactos: ${result.total_contacts}<br>`;
-          msgHTML += `Batches creados: ${result.batches_created}<br>`;
-          if (result.batches_failed > 0) {
-            msgHTML += `Batches fallidos: ${result.batches_failed}<br>`;
+    document.querySelectorAll('.wa-btn-type').forEach((sel) => {
+      const i = sel.getAttribute('data-btn');
+      const row = sel.closest('.wa-button-row');
+      const textInp = document.querySelector('.wa-btn-text[data-btn="' + i + '"]');
+      const urlInp = document.querySelector('.wa-btn-url[data-btn="' + i + '"]');
+      const urlCell = row ? row.querySelector('.wa-button-url') : null;
+      function toggle() {
+        const type = sel.value;
+        if (textInp) textInp.style.display = (type === 'URL' || type === 'QUICK_REPLY') ? 'block' : 'none';
+        if (urlInp) urlInp.style.display = type === 'URL' ? 'block' : 'none';
+        if (row) {
+          if (type === '') row.classList.add('wa-hide-optional');
+          else row.classList.remove('wa-hide-optional');
+          if (urlCell) {
+            if (type === 'URL') row.classList.remove('wa-hide-url');
+            else row.classList.add('wa-hide-url');
           }
-          msgHTML += `<br><strong>Detalles:</strong><br>`;
-          result.results.forEach((r, idx) => {
-            msgHTML += `${idx + 1}. ${r.batch_name || r.from_number}: ${r.total_calls} contactos (ID: ${r.batch_call_id})<br>`;
-          });
-          msgHTML += `</div>`;
-
-          batchCallMsg.innerHTML = msgHTML;
-
-          // Mostrar resumen
-          let summaryHTML = `<p><strong>Total contactos:</strong> ${result.total_contacts}</p>`;
-          summaryHTML += `<p><strong>Batches a crear:</strong> ${result.batches_created}</p>`;
-          summaryHTML += `<ul style="margin: 0.5rem 0; padding-left: 1.5rem;">`;
-          result.results.forEach(r => {
-            summaryHTML += `<li>${r.nickname || r.from_number} (${r.from_number}): ${r.total_calls} contactos</li>`;
-          });
-          summaryHTML += `</ul>`;
-          summaryHTML += `<p style="color: var(--accent);"><strong>Status:</strong> Creating as DRAFT ✓</p>`;
-          batchCallSummaryContent.innerHTML = summaryHTML;
-          batchCallSummary.style.display = 'block';
-        } else {
-          batchCallMsg.textContent = result.error || 'Error al crear batches';
-          batchCallMsg.className = 'msg error';
         }
-      } catch (error) {
-        batchCallMsg.textContent = 'Error: ' + error.message;
-        batchCallMsg.className = 'msg error';
-      } finally {
-        batchCallSubmitBtn.disabled = false;
+        waUpdatePreview();
       }
+      sel.addEventListener('change', toggle);
+      toggle();
+    });
+    document.querySelectorAll('.wa-btn-text, .wa-btn-url').forEach((inp) => {
+      inp.addEventListener('input', waUpdatePreview);
     });
 
-    batchCallCancelBtn.addEventListener('click', () => {
-      batchCallForm.reset();
-      batchCallCsvData = null;
-      batchCallPreview.style.display = 'none';
-      batchCallSummary.style.display = 'none';
-      batchCallProgress.classList.remove('active');
-      batchCallMsg.textContent = '';
-    });
+    if (waCreateTemplateBtn) {
+      waCreateTemplateBtn.addEventListener('click', async () => {
+        const waba = waWabaId && waWabaId.value.trim();
+        const token = waAccessToken && waAccessToken.value.trim();
+        const nameRes = waValidateName(waTemplateName && waTemplateName.value);
+        const bodyRes = waValidateBody(waTemplateBody && waTemplateBody.value);
+        if (!waba || !token) {
+          waTemplateMsg.textContent = 'WABA ID y Access Token son obligatorios.';
+          waTemplateMsg.className = 'msg error';
+          return;
+        }
+        if (!nameRes.ok) {
+          waTemplateMsg.textContent = nameRes.msg;
+          waTemplateMsg.className = 'msg error';
+          return;
+        }
+        if (!bodyRes.ok) {
+          waTemplateMsg.textContent = bodyRes.msg;
+          waTemplateMsg.className = 'msg error';
+          return;
+        }
+        const components = [{ type: 'BODY', text: bodyRes.value }];
+        const buttons = [];
+        document.querySelectorAll('.wa-btn-type').forEach((sel, i) => {
+          const type = sel.value;
+          const textInp = document.querySelector('.wa-btn-text[data-btn="' + i + '"]');
+          const urlInp = document.querySelector('.wa-btn-url[data-btn="' + i + '"]');
+          if (type === 'QUICK_REPLY' && textInp && textInp.value.trim()) {
+            buttons.push({ type: 'QUICK_REPLY', text: textInp.value.trim() });
+          }
+          if (type === 'URL' && textInp && textInp.value.trim() && urlInp && urlInp.value.trim()) {
+            buttons.push({ type: 'URL', text: textInp.value.trim(), url: urlInp.value.trim() });
+          }
+        });
+        if (buttons.length) components.push({ type: 'BUTTONS', buttons });
+        const body = {
+          name: nameRes.value,
+          language: (waTemplateLanguage && waTemplateLanguage.value) || 'es',
+          category: (waTemplateCategory && waTemplateCategory.value) || 'MARKETING',
+          components: components
+        };
+        waCreateTemplateBtn.disabled = true;
+        waTemplateMsg.textContent = 'Creando plantilla...';
+        waTemplateMsg.className = 'msg';
+        waTemplateIdResult.style.display = 'none';
+        try {
+          const res = await fetch(META_GRAPH + '/' + encodeURIComponent(waba) + '/message_templates', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          if (data.id) {
+            waTemplateMsg.textContent = 'Plantilla creada. Revisa el ID para verificar el estado de aprobación.';
+            waTemplateMsg.className = 'msg ok';
+            waTemplateIdValue.textContent = data.id;
+            waTemplateIdResult.style.display = 'block';
+          } else {
+            waTemplateMsg.textContent = (data.error && data.error.message) || JSON.stringify(data);
+            waTemplateMsg.className = 'msg error';
+          }
+        } catch (e) {
+          waTemplateMsg.textContent = 'Error: ' + e.message;
+          waTemplateMsg.className = 'msg error';
+        }
+        waCreateTemplateBtn.disabled = false;
+      });
+    }
+
+    if (waVerifyBtn && waVerifyTemplateId) {
+      waVerifyBtn.addEventListener('click', async () => {
+        const id = waVerifyTemplateId.value.trim();
+        const token = waAccessToken && waAccessToken.value.trim();
+        if (!id || !token) {
+          waVerifyResult.textContent = 'Ingresa el ID de plantilla y el Access Token.';
+          waVerifyResult.style.color = 'var(--error)';
+          return;
+        }
+        waVerifyResult.textContent = 'Consultando...';
+        waVerifyResult.style.color = '';
+        try {
+          const res = await fetch(META_GRAPH + '/' + encodeURIComponent(id) + '?fields=status,name,language,category', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          const data = await res.json();
+          if (data.status !== undefined) {
+            waVerifyResult.innerHTML = 'Estado: <strong>' + data.status + '</strong>' + (data.name ? ' — ' + data.name : '');
+          } else {
+            waVerifyResult.textContent = (data.error && data.error.message) || JSON.stringify(data);
+            waVerifyResult.style.color = 'var(--error)';
+          }
+        } catch (e) {
+          waVerifyResult.textContent = 'Error: ' + e.message;
+          waVerifyResult.style.color = 'var(--error)';
+        }
+      });
+    }
+
+    tabWhatsAppTemplates && tabWhatsAppTemplates.addEventListener('click', () => waUpdatePreview());
+
+    const waInsertVar1 = document.getElementById('waInsertVar1');
+    if (waInsertVar1 && waTemplateBody) {
+      waInsertVar1.addEventListener('click', () => {
+        const ta = waTemplateBody;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const text = ta.value;
+        const insert = '{{1}}';
+        ta.value = text.slice(0, start) + insert + text.slice(end);
+        ta.selectionStart = ta.selectionEnd = start + insert.length;
+        ta.focus();
+        waUpdatePreview();
+      });
+    }
 
     // ===== SECCIÓN DE GESTIÓN DE NÚMEROS =====
     const manageApiKey = document.getElementById('manageApiKey');

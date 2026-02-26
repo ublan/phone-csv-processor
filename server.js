@@ -906,6 +906,7 @@ const FRONTEND_ROUTES = [
   '/batch-calling',
   '/gestionar-numeros',
   '/comparar-listas',
+  '/plantillas-whatsapp',
 ];
 
 FRONTEND_ROUTES.forEach((route) => {
