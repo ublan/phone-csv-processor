@@ -90,7 +90,21 @@ function parseCsvLine(line) {
 
 /**
  * Convierte filas CSV en objetos con campos normalizados.
- * Columnas esperadas: 0=phone, 1=name, 2=email, 5=region, 6=pais
+ *
+ * Comportamiento:
+ * - Si hay cabecera, intenta detectar columnas por nombre (muy permisivo):
+ *   - Teléfono: phone, phone_number, phone number, telefono, tel, mobile, msisdn...
+ *   - País: pais, country, country_code, country code...
+ *   - Nombre: name, nombre, first_name...
+ *   - Email: email, mail, e-mail...
+ *   - Región: region, state, provincia...
+ * - Si no hay cabecera, mantiene el mapeo histórico:
+ *   0=phone, 1=name, 2=email, 5=region, 6=pais
+ *
+ * Reglas:
+ * - Solo se descartan filas sin teléfono.
+ * - El país puede ir vacío; la validación será más permisiva en ese caso.
+ *
  * @param {string[][]} rows
  * @returns {Array<{ phone: string, name: string, email: string, region: string, pais: string }>}
  */
@@ -98,22 +112,88 @@ export function rowsToRecords(rows) {
   if (!rows || rows.length === 0) return [];
 
   const records = [];
-  const header = rows[0];
-  const isHeader = /phone|nombre|name|email|pais|country|region/i.test(String(header[0] || '') + String(header[1] || ''));
+  const header = rows[0] || [];
+  const joinedHeader = (String(header[0] || '') + String(header[1] || '')).toLowerCase();
 
-  const start = isHeader ? 1 : 0;
+  // Heurística básica: si las primeras celdas contienen palabras típicas de header,
+  // lo tratamos como cabecera.
+  const looksLikeHeader = /phone|nombre|name|email|pais|country|region/i.test(joinedHeader);
+
+  let phoneIdx = 0;
+  let nameIdx = 1;
+  let emailIdx = 2;
+  let regionIdx = 5;
+  let paisIdx = 6;
+
+  if (looksLikeHeader) {
+    const lower = header.map((h) => String(h || '').trim().toLowerCase());
+
+    const findIndex = (predicates) =>
+      lower.findIndex((h) => predicates.some((p) => p.test(h)));
+
+    // Teléfono: muy permisivo con distintos nombres
+    const phoneCandidates = [
+      /^phone[\s_]*number$/,
+      /^phone$/,
+      /^tel$/,
+      /^telefono$/,
+      /^mobile$/,
+      /^msisdn$/,
+      /^number$/,
+    ];
+    const paisCandidates = [
+      /^pais$/,
+      /^país$/,
+      /^country$/,
+      /^country[\s_]*code$/,
+      /^countrycode$/,
+    ];
+    const nameCandidates = [
+      /^name$/,
+      /^nombre$/,
+      /^first[\s_]*name$/,
+      /^last[\s_]*name$/,
+      /^full[\s_]*name$/,
+    ];
+    const emailCandidates = [
+      /^email$/,
+      /^e[\s_]*mail$/,
+      /^mail$/,
+    ];
+    const regionCandidates = [
+      /^region$/,
+      /^state$/,
+      /^provincia$/,
+      /^area$/,
+    ];
+
+    const detectedPhone = findIndex(phoneCandidates);
+    if (detectedPhone !== -1) phoneIdx = detectedPhone;
+
+    const detectedPais = findIndex(paisCandidates);
+    if (detectedPais !== -1) paisIdx = detectedPais;
+
+    const detectedName = findIndex(nameCandidates);
+    if (detectedName !== -1) nameIdx = detectedName;
+
+    const detectedEmail = findIndex(emailCandidates);
+    if (detectedEmail !== -1) emailIdx = detectedEmail;
+
+    const detectedRegion = findIndex(regionCandidates);
+    if (detectedRegion !== -1) regionIdx = detectedRegion;
+  }
+
+  const start = looksLikeHeader ? 1 : 0;
 
   for (let i = start; i < rows.length; i++) {
-    const row = rows[i];
-    // phone(0), name(1), email(2), (3), (4), region(5), pais(6)
-    const phone = (row[0] || '').trim();
-    const name = (row[1] || '').trim();
-    const email = (row[2] || '').trim();
-    const region = (row[5] || '').trim();
-    const pais = (row[6] || '').trim();
+    const row = rows[i] || [];
+    const phone = (row[phoneIdx] || '').trim();
+    const name = (row[nameIdx] || '').trim();
+    const email = (row[emailIdx] || '').trim();
+    const region = (row[regionIdx] || '').trim();
+    const pais = (row[paisIdx] || '').trim();
 
-    // Filas vacías o sin teléfono ni país
-    if (!phone && !pais) continue;
+    // Fila sin teléfono: no tiene sentido procesarla
     if (!phone) continue;
 
     records.push({ phone, name, email, region, pais });

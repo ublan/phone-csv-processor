@@ -18,6 +18,7 @@
     "multer": "^1.4.5-lts.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "busboy": "^1.6.0"
+    "busboy": "^1.6.0",
+    "libphonenumber-js": "^1.10.51"
   }
 }

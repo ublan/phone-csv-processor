@@ -1,9 +1,17 @@
 /**
- * Validador de números telefónicos en formato E.164.
- * - Elimina duplicados, formato inválido, longitud inválida, prefijo no coincidente con país.
+ * Validador de números telefónicos.
+ *
+ * Objetivo:
+ * - Replicar el comportamiento de phone-number-formatter (src/utils/csvUtils.ts + phoneUtils.ts),
+ *   es decir: usar libphonenumber-js para aceptar cualquier CSV razonable y filtrar solo
+ *   los números que la librería considera inválidos.
+ *
+ * Notas:
+ * - El campo "pais" solo se conserva para contexto/exports, pero no se usa para bloquear números.
  */
 
 import { getCountryRule, getCountryByCode, COUNTRY_ALIASES } from '../config/countryRules.js';
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
 
 /**
  * Extrae solo dígitos del número (sin +) para comparación E.164.
@@ -24,6 +32,64 @@ export function toE164(raw) {
   const digits = toE164Digits(raw);
   if (!digits) return '';
   return digits.startsWith('+') ? raw.trim() : `+${digits}`;
+}
+
+/**
+ * Versión permisiva basada en libphonenumber-js, similar a phone-number-formatter/src/utils/phoneUtils.ts
+ * @param {string} phoneNumber
+ * @param {string} defaultCountry - ISO 3166-1 alpha-2 (ej: 'ES')
+ * @returns {string|null} - Número en E.164 o null si no es válido
+ */
+export function formatToE164Lib(phoneNumber, defaultCountry = 'ES') {
+  try {
+    if (!phoneNumber || typeof phoneNumber !== 'string') return null;
+
+    let normalizedNumber = phoneNumber.trim().replace(/\s+/g, '');
+
+    // Convertir 00XX... a +XX...
+    if (normalizedNumber.startsWith('00')) {
+      normalizedNumber = '+' + normalizedNumber.substring(2);
+    }
+
+    // Caso especial español: locales de 9 dígitos que empiezan por 6–9
+    if (defaultCountry === 'ES' && /^[6-9]\d{8}$/.test(normalizedNumber)) {
+      normalizedNumber = '+34' + normalizedNumber;
+    }
+
+    // Si son solo dígitos largos, intentar sin + y luego con +
+    if (/^\d+$/.test(normalizedNumber) && normalizedNumber.length > 8) {
+      try {
+        if (isValidPhoneNumber(normalizedNumber, defaultCountry)) {
+          const parsed = parsePhoneNumber(normalizedNumber, defaultCountry);
+          return parsed.format('E.164');
+        }
+      } catch (_) {
+        try {
+          const withPlus = '+' + normalizedNumber;
+          if (isValidPhoneNumber(withPlus)) {
+            const parsed = parsePhoneNumber(withPlus);
+            return parsed.format('E.164');
+          }
+        } catch (_) {
+          return null;
+        }
+      }
+    } else {
+      // Ya tiene + o es un número local
+      try {
+        if (isValidPhoneNumber(normalizedNumber, defaultCountry)) {
+          const parsed = parsePhoneNumber(normalizedNumber, defaultCountry);
+          return parsed.format('E.164');
+        }
+      } catch (_) {
+        return null;
+      }
+    }
+
+    return null;
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -71,61 +137,14 @@ export function validatePhoneForCountry(phone, pais) {
     return { valid: false, error: 'Número vacío' };
   }
 
-  const trimmed = phone.trim();
-
-  // Debe comenzar con +
-  if (!trimmed.startsWith('+')) {
-    return { valid: false, error: 'No comienza con +' };
+  // Siempre delegamos la validación "real" a libphonenumber-js,
+  // igual que en phone-number-formatter.
+  const formatted = formatToE164Lib(phone, 'ES');
+  if (!formatted) {
+    return { valid: false, error: 'Número inválido según libphonenumber-js' };
   }
 
-  // Solo + y dígitos
-  const hasInvalid = /[^\d+]/.test(trimmed) || /\+.*\+/.test(trimmed);
-  if (hasInvalid) {
-    return { valid: false, error: 'Contiene caracteres no válidos' };
-  }
-
-  const digits = toE164Digits(trimmed);
-  if (digits.length < 8) {
-    return { valid: false, error: 'Muy corto' };
-  }
-
-  const e164 = `+${digits}`;
-  const split = splitE164(e164);
-  if (!split) {
-    return { valid: false, error: 'No se pudo extraer código de país' };
-  }
-
-  const { dialCode, national } = split;
-  const allowed = getCountryByCode(dialCode);
-  if (!allowed) {
-    return { valid: false, error: `Código +${dialCode} no reconocido` };
-  }
-
-  // Normalizar nombre de país para comparar
-  const countryKey = COUNTRY_ALIASES[pais] || pais;
-  const matches = Array.isArray(allowed)
-    ? allowed.some((c) => (COUNTRY_ALIASES[c] || c) === countryKey || c === countryKey)
-    : (COUNTRY_ALIASES[allowed] || allowed) === countryKey || allowed === countryKey;
-
-  if (!matches) {
-    return { valid: false, error: `Prefijo +${dialCode} no coincide con país: ${pais}` };
-  }
-
-  const rule = getCountryRule(pais) || getCountryRule(countryKey);
-  const digitLen = digits.length; // E.164: solo dígitos (sin +)
-  if (rule) {
-    const min = rule.minE164Length ?? 8;
-    const max = rule.maxE164Length ?? 15;
-    if (digitLen < min || digitLen > max) {
-      return { valid: false, error: `Longitud inválida para ${pais}: ${digitLen} dígitos (esperado ${min}-${max})` };
-    }
-  } else {
-    if (digitLen < 8 || digitLen > 15) {
-      return { valid: false, error: `Longitud inválida: ${digitLen} dígitos (8-15)` };
-    }
-  }
-
-  return { valid: true, e164 };
+  return { valid: true, e164: formatted };
 }
 
 /**
@@ -135,7 +154,6 @@ export function validatePhoneForCountry(phone, pais) {
  * @returns {Array<{ ...record, e164: string }>}
  */
 export function validateRecords(records) {
-  const seen = new Set();
   const out = [];
   const errors = [];
 
@@ -146,8 +164,9 @@ export function validateRecords(records) {
         errors.push({ phone: r.phone, pais: r.pais, error });
         continue;
       }
-      if (seen.has(e164)) continue;
-      seen.add(e164);
+      // A diferencia de la versión original, NO eliminamos duplicados aquí:
+      // queremos el mismo comportamiento que phone-number-formatter,
+      // donde cada fila válida del CSV se conserva aunque el número se repita.
       out.push({ ...r, e164 });
     } catch (e) {
       errors.push({ phone: r.phone, pais: r.pais, error: e.message });

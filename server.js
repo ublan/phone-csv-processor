@@ -49,7 +49,8 @@ function generateIncrementalNickname(baseNickname, index) {
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Aceptar JSON grandes (csvContent en el body) sin tirar PayloadTooLargeError
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(join(process.cwd(), 'public')));
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads');
