@@ -31,6 +31,14 @@
    from = "/api/retell/list-batch-calls"
    to = "/.netlify/functions/retell-list-batch-calls"
    status = 200
+[[redirects]]
+  from = "/api/retell/list-agents"
+  to = "/.netlify/functions/retell-list-agents"
+  status = 200
+[[redirects]]
+  from = "/api/retell/migrate-agent"
+  to = "/.netlify/functions/retell-migrate-agent"
+  status = 200
 
 [[redirects]]
   # Catch-all para SPA: cualquier ruta de frontend sirve index.html
