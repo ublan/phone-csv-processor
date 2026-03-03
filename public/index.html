@@ -16,6 +16,7 @@
       <button type="button" class="tab-btn" id="tabImport">Importar a Retell AI</button>
       <button type="button" class="tab-btn" id="tabBatchCall">Batch Calling</button>
       <button type="button" class="tab-btn" id="tabManage">Gestionar Números</button>
+      <button type="button" class="tab-btn" id="tabRetellMigrate">Migrar Agente Retell</button>
       <button type="button" class="tab-btn" id="tabCompare">Comparar Listas / JSON</button>
       <button type="button" class="tab-btn" id="tabWhatsAppTemplates">Plantillas WhatsApp</button>
       <button type="button" class="tab-btn" id="tabProxyLink">ProxyLink</button>
@@ -195,6 +196,76 @@
       <div id="numbersTable" style="overflow-x: auto; background: var(--bg); border-radius: var(--radius); padding: 1rem;"></div>
       <div id="manageMsg" style="margin-top: 1rem;"></div>
     </div>
+  </div>
+
+  <!-- Sección de Migrar Agente Retell -->
+  <div class="card card-large" id="retellMigrateSection" style="display: none;">
+    <h2 class="section-title">Migrar agente Retell AI entre organizaciones</h2>
+    <p class="section-desc">
+      Esta microtool usa la API oficial de Retell para clonar un agente (y su Retell LLM, si aplica) desde una organización origen a otra destino.
+      Puedes ingresar manualmente las API Keys o dejarlas vacías para que el backend use las variables de entorno configuradas.
+    </p>
+
+    <form id="retellMigrateForm" class="form-block" style="max-width: 900px;">
+      <div class="form-group">
+        <label for="retellMigrateApiKeyOrigin">API Key ORIGEN (opcional)</label>
+        <input
+          type="password"
+          id="retellMigrateApiKeyOrigin"
+          class="wa-input"
+          placeholder="RETELL_API_KEY_ORIGEN (si se deja vacío, se usa la del backend)"
+        />
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Se usa para listar agentes y obtener la configuración del agente y su Retell LLM.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="retellMigrateAgentsList">Agentes en la organización ORIGEN</label>
+        <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.5rem;">
+          <button type="button" class="btn btn-secondary" id="retellListAgentsBtn">Listar agentes</button>
+          <span id="retellListAgentsStatus" class="wa-hint" style="text-transform:none;"></span>
+        </div>
+        <div
+          id="retellAgentsContainer"
+          style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; font-size: 0.85rem; background: var(--bg);"
+        >
+          <p style="color: var(--muted); margin: 0;">Pulsa “Listar agentes” para ver los agentes disponibles y seleccionar uno.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="retellMigrateAgentId">Agent ID seleccionado *</label>
+        <input
+          type="text"
+          id="retellMigrateAgentId"
+          class="wa-input"
+          placeholder="agent_xxx (se rellena al hacer clic en un agente de la lista o se puede pegar manualmente)"
+        />
+        <small id="retellSelectedVoiceIdInfo" style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Voice ID origen: (aún no seleccionado)
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="retellMigrateApiKeysDest">API Keys DESTINO (una por línea)</label>
+        <textarea
+          id="retellMigrateApiKeysDest"
+          class="wa-textarea"
+          rows="4"
+          placeholder="RETELL_API_KEY_DESTINO_1&#10;RETELL_API_KEY_DESTINO_2&#10;..."
+        ></textarea>
+        <small style="color: var(--muted); font-size: 0.85rem; display: block; margin-top: 0.25rem;">
+          Si se deja vacío, se usará la variable de entorno RETELL_API_KEY_DESTINO para un único destino. Si agregas varias API Keys, se migrará el mismo agente secuencialmente a cada organización destino.
+        </small>
+      </div>
+
+      <button type="submit" class="btn" id="retellMigrateSubmitBtn">Migrar agente ahora</button>
+      <pre
+        id="retellMigrateLog"
+        style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); font-size: 0.85rem; white-space: pre-wrap; max-height: 260px; overflow-y: auto;"
+      ></pre>
+    </form>
   </div>
 
   <!-- Sección de Comparar Listas / JSON -->
@@ -1066,6 +1137,7 @@
     const importSection = document.getElementById('importSection');
     const batchCallSection = document.getElementById('batchCallSection');
     const manageSection = document.getElementById('manageSection');
+    const retellMigrateSection = document.getElementById('retellMigrateSection');
     const compareSection = document.getElementById('compareSection');
     const whatsAppTemplatesSection = document.getElementById('whatsAppTemplatesSection');
 
@@ -1073,6 +1145,7 @@
     const tabImport = document.getElementById('tabImport');
     const tabBatchCall = document.getElementById('tabBatchCall');
     const tabManage = document.getElementById('tabManage');
+    const tabRetellMigrate = document.getElementById('tabRetellMigrate');
     const tabCompare = document.getElementById('tabCompare');
     const tabWhatsAppTemplates = document.getElementById('tabWhatsAppTemplates');
     const proxyLinkSection = document.getElementById('proxyLinkSection');
@@ -1090,6 +1163,12 @@
     const directProgressText = document.getElementById('directProgressText');
     const directImportSubmitBtn = document.getElementById('directImportSubmitBtn');
     const directImportMsg = document.getElementById('directImportMsg');
+    const retellMigrateForm = document.getElementById('retellMigrateForm');
+    const retellMigrateSubmitBtn = document.getElementById('retellMigrateSubmitBtn');
+    const retellMigrateLog = document.getElementById('retellMigrateLog');
+    const retellListAgentsBtn = document.getElementById('retellListAgentsBtn');
+    const retellListAgentsStatus = document.getElementById('retellListAgentsStatus');
+    const retellAgentsContainer = document.getElementById('retellAgentsContainer');
 
     // Helper para activar pestañas y sincronizar con la URL
     function setActiveTab(tab) {
@@ -1098,6 +1177,7 @@
       importSection.style.display = 'none';
       batchCallSection.style.display = 'none';
       manageSection.style.display = 'none';
+      if (retellMigrateSection) retellMigrateSection.style.display = 'none';
       compareSection.style.display = 'none';
       if (whatsAppTemplatesSection) whatsAppTemplatesSection.style.display = 'none';
       if (proxyLinkSection) proxyLinkSection.style.display = 'none';
@@ -1107,6 +1187,7 @@
       tabImport.classList.remove('active');
       tabBatchCall.classList.remove('active');
       tabManage.classList.remove('active');
+      if (tabRetellMigrate) tabRetellMigrate.classList.remove('active');
       tabCompare.classList.remove('active');
       if (tabWhatsAppTemplates) tabWhatsAppTemplates.classList.remove('active');
       if (tabProxyLink) tabProxyLink.classList.remove('active');
@@ -1129,6 +1210,10 @@
         manageSection.style.display = 'block';
         tabManage.classList.add('active');
         path = '/gestionar-numeros';
+      } else if (tab === 'migrate-agent') {
+        if (retellMigrateSection) retellMigrateSection.style.display = 'block';
+        if (tabRetellMigrate) tabRetellMigrate.classList.add('active');
+        path = '/migrar-agente-retell';
       } else if (tab === 'compare') {
         compareSection.style.display = 'block';
         tabCompare.classList.add('active');
@@ -1162,6 +1247,12 @@
       setActiveTab('manage');
     });
 
+    if (tabRetellMigrate && retellMigrateSection) {
+      tabRetellMigrate.addEventListener('click', () => {
+        setActiveTab('migrate-agent');
+      });
+    }
+
     if (tabCompare && compareSection) {
       tabCompare.addEventListener('click', () => {
         setActiveTab('compare');
@@ -1185,6 +1276,8 @@
         setActiveTab('batch');
       } else if (path === '/gestionar-numeros') {
         setActiveTab('manage');
+      } else if (path === '/migrar-agente-retell') {
+        setActiveTab('migrate-agent');
       } else if (path === '/comparar-listas') {
         setActiveTab('compare');
       } else if (path === '/plantillas-whatsapp') {
@@ -1204,6 +1297,201 @@
 
     // Inicializar al cargar
     initTabFromPath();
+
+    // ===== MICROTOOL: MIGRAR AGENTE RETELL =====
+
+    if (retellListAgentsBtn && retellAgentsContainer) {
+      retellListAgentsBtn.addEventListener('click', async () => {
+        const apiKeyOrigenInput = document.getElementById('retellMigrateApiKeyOrigin');
+        const apiKeyOrigen = apiKeyOrigenInput && apiKeyOrigenInput.value.trim();
+
+        if (retellListAgentsStatus) {
+          retellListAgentsStatus.textContent = 'Listando agentes...';
+          retellListAgentsStatus.style.color = '';
+        }
+        retellListAgentsBtn.disabled = true;
+        retellAgentsContainer.innerHTML = '<p style="color: var(--muted); margin: 0;">Cargando agentes...</p>';
+
+        try {
+          const params = new URLSearchParams();
+          if (apiKeyOrigen) params.set('apiKeyOrigen', apiKeyOrigen);
+          const res = await fetch('/api/retell/list-agents?' + params.toString(), {
+            method: 'GET',
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data.ok) {
+            const msg =
+              (data && data.error && (data.error.message || data.error)) ||
+              'No se pudieron listar los agentes.';
+            retellAgentsContainer.innerHTML =
+              '<p style="color: var(--error); margin: 0;">' + msg + '</p>';
+            if (retellListAgentsStatus) {
+              retellListAgentsStatus.textContent = 'Error al listar agentes.';
+              retellListAgentsStatus.style.color = 'var(--error)';
+            }
+            return;
+          }
+
+          const agents = Array.isArray(data.agents) ? data.agents : [];
+          if (!agents.length) {
+            retellAgentsContainer.innerHTML =
+              '<p style="color: var(--muted); margin: 0;">No se encontraron agentes en esta organización.</p>';
+            if (retellListAgentsStatus) {
+              retellListAgentsStatus.textContent = '0 agentes encontrados.';
+              retellListAgentsStatus.style.color = 'var(--muted)';
+            }
+            return;
+          }
+
+          const agentIdInput = document.getElementById('retellMigrateAgentId');
+          const voiceInfoEl = document.getElementById('retellSelectedVoiceIdInfo');
+          let html = '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';
+          html +=
+            '<thead><tr>' +
+            '<th style="text-align:left; padding:0.25rem; border-bottom:1px solid var(--border);">Agent ID</th>' +
+            '<th style="text-align:left; padding:0.25rem; border-bottom:1px solid var(--border);">Nombre</th>' +
+            '<th style="text-align:left; padding:0.25rem; border-bottom:1px solid var(--border);">Versión</th>' +
+            '<th style="text-align:left; padding:0.25rem; border-bottom:1px solid var(--border);">Publicado</th>' +
+            '<th style="padding:0.25rem; border-bottom:1px solid var(--border);"></th>' +
+            '</tr></thead><tbody>';
+          agents.forEach((a) => {
+            const id = a.agent_id || a.id || '';
+            const name = a.agent_name || '';
+            const version = typeof a.version === 'number' ? a.version : '';
+            const published = a.is_published ? 'Sí' : 'No';
+            const voiceId = a.voice_id || '';
+            html +=
+              '<tr>' +
+              `<td style="padding:0.25rem; border-bottom:1px solid var(--border); font-family:monospace;">${id}</td>` +
+              `<td style="padding:0.25rem; border-bottom:1px solid var(--border);">${name}</td>` +
+              `<td style="padding:0.25rem; border-bottom:1px solid var(--border);">${version}</td>` +
+              `<td style="padding:0.25rem; border-bottom:1px solid var(--border);">${published}</td>` +
+              `<td style="padding:0.25rem; border-bottom:1px solid var(--border);"><button type="button" class="btn btn-secondary btn-small" data-retell-select-agent="${id}" data-retell-voice-id="${voiceId}">Seleccionar</button></td>` +
+              '</tr>';
+          });
+          html += '</tbody></table>';
+          retellAgentsContainer.innerHTML = html;
+
+          // Delegar clicks para seleccionar agente
+          retellAgentsContainer.querySelectorAll('[data-retell-select-agent]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const id = btn.getAttribute('data-retell-select-agent');
+              const vId = btn.getAttribute('data-retell-voice-id') || '';
+              if (agentIdInput) {
+                agentIdInput.value = id || '';
+              }
+              if (voiceInfoEl) {
+                voiceInfoEl.textContent = vId
+                  ? `Voice ID origen: ${vId}`
+                  : 'Voice ID origen: (no definido en el agente)';
+              }
+            });
+          });
+
+          if (retellListAgentsStatus) {
+            retellListAgentsStatus.textContent = `Agentes listados: ${agents.length}. Haz clic en “Seleccionar” para usar un agent_id.`;
+            retellListAgentsStatus.style.color = 'var(--accent)';
+          }
+        } catch (err) {
+          retellAgentsContainer.innerHTML =
+            '<p style="color: var(--error); margin: 0;">Error al listar agentes: ' +
+            (err && err.message ? err.message : String(err)) +
+            '</p>';
+          if (retellListAgentsStatus) {
+            retellListAgentsStatus.textContent = 'Error al listar agentes.';
+            retellListAgentsStatus.style.color = 'var(--error)';
+          }
+        } finally {
+          retellListAgentsBtn.disabled = false;
+        }
+      });
+    }
+
+    if (retellMigrateForm && retellMigrateSubmitBtn && retellMigrateLog) {
+      retellMigrateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        retellMigrateLog.textContent = 'Iniciando migración de agente...\n';
+        retellMigrateSubmitBtn.disabled = true;
+
+        const apiKeyOrigenInput = document.getElementById('retellMigrateApiKeyOrigin');
+        const apiKeysDestInput = document.getElementById('retellMigrateApiKeysDest');
+        const agentIdInput = document.getElementById('retellMigrateAgentId');
+
+        const apiKeyOrigen = apiKeyOrigenInput && apiKeyOrigenInput.value.trim();
+        const rawDest = apiKeysDestInput && apiKeysDestInput.value;
+        const agentId = agentIdInput && agentIdInput.value.trim();
+
+        const destKeys = (rawDest || '')
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        // Si no se especifican API keys destino, se usará la del backend (una sola ejecución)
+        const targets = destKeys.length ? destKeys : [null];
+
+        try {
+          for (let i = 0; i < targets.length; i++) {
+            const targetKey = targets[i];
+            const payload = {};
+            if (apiKeyOrigen) payload.apiKeyOrigen = apiKeyOrigen;
+            if (targetKey) payload.apiKeyDestino = targetKey;
+            if (agentId) payload.agentId = agentId;
+
+            retellMigrateLog.textContent += `\n=== Migración ${i + 1} de ${targets.length} ===\n`;
+
+            const res = await fetch('/api/retell/migrate-agent', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data.ok) {
+              const lines = [];
+              lines.push(`Error en migración (status ${res.status})`);
+              if (data.step) lines.push(`Paso: ${data.step}`);
+              if (data.error) {
+                lines.push(
+                  typeof data.error === 'string'
+                    ? data.error
+                    : JSON.stringify(data.error, null, 2),
+                );
+              }
+              if (Array.isArray(data.missing) && data.missing.length) {
+                lines.push('Faltan variables/valores: ' + data.missing.join(', '));
+              }
+              retellMigrateLog.textContent += lines.join('\n') + '\n';
+              // seguir con el siguiente destino en lugar de abortar todo
+              continue;
+            }
+
+            const lines = [];
+            if (Array.isArray(data.logs)) {
+              lines.push(...data.logs);
+            }
+            lines.push('');
+            lines.push('Resumen:');
+            lines.push(`  Agent ID origen:   ${data.originAgentId || 'desconocido'}`);
+            lines.push(`  Agent ID destino:  ${data.newAgentId || 'desconocido'}`);
+            if (data.sourceLlmId || data.newLlmId) {
+              lines.push(`  LLM origen:        ${data.sourceLlmId || 'N/A'}`);
+              lines.push(`  LLM destino:       ${data.newLlmId || 'N/A'}`);
+            } else {
+              lines.push(
+                '  LLM: el agente no usaba un Retell LLM o no se clonó.',
+              );
+            }
+            retellMigrateLog.textContent += lines.join('\n') + '\n';
+          }
+        } catch (err) {
+          retellMigrateLog.textContent +=
+            '\nError de red o inesperado: ' +
+            (err && err.message ? err.message : String(err));
+        } finally {
+          retellMigrateSubmitBtn.disabled = false;
+        }
+      });
+    }
 
     // Manejar cambio de fuente de números en importación directa
     directNumberSource.addEventListener('change', (e) => {
@@ -1661,10 +1949,6 @@
     const waSendTemplateBtn = document.getElementById('waSendTemplateBtn');
     const waSendResult = document.getElementById('waSendResult');
     const waTemplatePicker = document.getElementById('waTemplatePicker');
-    const waSelectedTemplatePreview = document.getElementById('waSelectedTemplatePreview');
-    const waSelectedTemplateBodyText = document.getElementById('waSelectedTemplateBodyText');
-    const waSelectedTemplateButtonsWrapper = document.getElementById('waSelectedTemplateButtonsWrapper');
-    const waSelectedTemplateButtons = document.getElementById('waSelectedTemplateButtons');
 
     // ===== SECCIÓN PROXYLINK =====
     const proxySupabaseUrlInput = document.getElementById('proxySupabaseUrl');
